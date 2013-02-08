@@ -44,14 +44,16 @@ namespace Toast
 		this->spriteMap2->add("IDLE", spritemap2IdleFrames, 10, 15, true);
 		this->spriteMap2->play("IDLE");
 
-		text = new Text("tile_caverna.png");
-		addGraphic(text);
+		demoText = new Text("TOAST FRAMEWORK - DEMO");
+		addGraphic(demoText);
+
+		pressEnter = new Text("PRESS [ENTER] for Debug mode");
+		pressEnter->y = TF::height - pressEnter->height;
+		addGraphic(pressEnter);
 
 		goblin1 = new Entity();
-		/*goblin1->x = 100;
-		goblin1->y = 400;*/
 		goblin1->x = 10;
-		goblin1->y = 10;
+		goblin1->y = 400;
 		goblin1->graphic = spriteMap;
 		goblin1->setHitbox(spriteMap->frameWidth, spriteMap->frameHeight, 0.0, 0.0);
 		goblin1->alpha = 1.0f;
@@ -111,8 +113,6 @@ namespace Toast
 
 
 		// logic for goblin2
-
-		
 		goblin2->x += 300*dir*TF::elapsed;
 		if(goblin2->x >= TF::width - goblin2->width)
 		{

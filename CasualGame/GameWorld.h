@@ -28,8 +28,8 @@ namespace Toast
 		Entity* goblin2;
 		int dir;
 
-		//Font* font;
-		Text* text;
+		Text* demoText;
+		Text* pressEnter;
 		
 	};
 }

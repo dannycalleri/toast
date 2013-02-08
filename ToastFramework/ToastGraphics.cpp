@@ -133,7 +133,7 @@ namespace Toast
 
 		al_draw_tinted_bitmap(canvas->getBuffer(), 
 							  al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
-							  canvas->x, canvas->x, 0);
+							  canvas->x, canvas->y, 0);
 	}
 
 	void Graphics::DrawTextFont(Font* font, const std::string& text, byte r, byte g, byte b, float x, float y)

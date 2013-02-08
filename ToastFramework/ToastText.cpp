@@ -57,6 +57,8 @@ namespace Toast
 
 	void Text::render()
 	{
+		canvas->x = this->x;
+		canvas->y = this->y;
 		canvas->render();
 	}
 }
