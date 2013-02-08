@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ToastFramework", "ToastFramework\ToastFramework.vcproj", "{F5967EFB-B294-48FA-A0D6-EAD9D028FD81}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CasualGame", "CasualGame\CasualGame.vcproj", "{D0D33732-3977-4635-BDD2-4C10F7C1DDCF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F5967EFB-B294-48FA-A0D6-EAD9D028FD81}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F5967EFB-B294-48FA-A0D6-EAD9D028FD81}.Debug|Win32.Build.0 = Debug|Win32
+		{F5967EFB-B294-48FA-A0D6-EAD9D028FD81}.Release|Win32.ActiveCfg = Release|Win32
+		{F5967EFB-B294-48FA-A0D6-EAD9D028FD81}.Release|Win32.Build.0 = Release|Win32
+		{D0D33732-3977-4635-BDD2-4C10F7C1DDCF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D0D33732-3977-4635-BDD2-4C10F7C1DDCF}.Debug|Win32.Build.0 = Debug|Win32
+		{D0D33732-3977-4635-BDD2-4C10F7C1DDCF}.Release|Win32.ActiveCfg = Release|Win32
+		{D0D33732-3977-4635-BDD2-4C10F7C1DDCF}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
