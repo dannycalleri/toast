@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TF.h" />
+    <ClInclude Include="Toast.h" />
+    <ClInclude Include="ToastAnim.h" />
+    <ClInclude Include="ToastCanvas.h" />
+    <ClInclude Include="ToastCommon.h" />
+    <ClInclude Include="ToastConsole.h" />
+    <ClInclude Include="ToastEngine.h" />
+    <ClInclude Include="ToastEntity.h" />
+    <ClInclude Include="ToastError.h" />
+    <ClInclude Include="ToastEventsManager.h" />
+    <ClInclude Include="ToastFont.h" />
+    <ClInclude Include="ToastGraphic.h" />
+    <ClInclude Include="ToastGraphics.h" />
+    <ClInclude Include="ToastImage.h" />
+    <ClInclude Include="ToastInput.h" />
+    <ClInclude Include="ToastKeycodes.h" />
+    <ClInclude Include="ToastMask.h" />
+    <ClInclude Include="ToastRandom.h" />
+    <ClInclude Include="ToastSprite.h" />
+    <ClInclude Include="ToastSpritemap.h" />
+    <ClInclude Include="ToastSpriteSheet.h" />
+    <ClInclude Include="ToastText.h" />
+    <ClInclude Include="ToastTexture.h" />
+    <ClInclude Include="ToastTilemap.h" />
+    <ClInclude Include="ToastTypes.h" />
+    <ClInclude Include="ToastWorld.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="TF.cpp" />
+    <ClCompile Include="ToastAnim.cpp" />
+    <ClCompile Include="ToastCanvas.cpp" />
+    <ClCompile Include="ToastConsole.cpp" />
+    <ClCompile Include="ToastEngine.cpp" />
+    <ClCompile Include="ToastEntity.cpp" />
+    <ClCompile Include="ToastEventsManager.cpp" />
+    <ClCompile Include="ToastFont.cpp" />
+    <ClCompile Include="ToastGraphic.cpp" />
+    <ClCompile Include="ToastGraphics.cpp" />
+    <ClCompile Include="ToastImage.cpp" />
+    <ClCompile Include="ToastInput.cpp" />
+    <ClCompile Include="ToastRandom.cpp" />
+    <ClCompile Include="ToastSprite.cpp" />
+    <ClCompile Include="ToastSpritemap.cpp" />
+    <ClCompile Include="ToastSpriteSheet.cpp" />
+    <ClCompile Include="ToastText.cpp" />
+    <ClCompile Include="ToastTexture.cpp" />
+    <ClCompile Include="ToastTilemap.cpp" />
+    <ClCompile Include="ToastWorld.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{61DFB81A-E5F8-43D6-9203-601843019C95}</ProjectGuid>
+    <RootNamespace>ToastFramework</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\coding\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\coding\allegro-5.0.8-msvc-11.0\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
