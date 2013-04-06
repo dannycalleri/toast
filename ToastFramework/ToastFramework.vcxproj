@@ -89,8 +89,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\coding\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\coding\allegro-5.0.8-msvc-11.0\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\allegro-5.0.8-msvc-11.0\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

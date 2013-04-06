@@ -48,8 +48,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LibraryPath>C:\coding\allegro-5.0.8-msvc-11.0\lib;C:\coding\ToastFramework_VS2012\ToastFramework\Debug;$(LibraryPath)</LibraryPath>
-    <IncludePath>C:\coding\ToastFramework_VS2012\ToastFramework;C:\coding\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\allegro-5.0.8-msvc-11.0\lib;..\ToastFramework\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\ToastFramework;..\..\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
