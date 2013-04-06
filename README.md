@@ -17,6 +17,28 @@ It's perfect for learning C++ while doing what you love: making games.
 It already has most of the features needed to complete a nice little game, but
 you are encouraged to help and share your code with the others. 
 
+How-to (Windows)
+--------------------------------------
+First thing you need is Visual Studio 2012:
+http://www.microsoft.com/visualstudio/eng/downloads
+
+Visual Studio Express 2012 is perfect, just remember to install the Desktop edition.
+
+Toast is also based on Allegro 5.0.8, so you need to download the library here:
+http://cdn.allegro.cc/file/library/allegro/5.0.8/allegro-5.0.8-msvc-11.0.zip
+
+Now follow these easy steps:
+
+1. Create a new directory in C, I called mine "coding"
+2. Unzip the file allegro-5.0.8-msvc-11.0.zip inside this directory
+3. Check out Toast or download it as a zip inside the same directory and unzip it
+4. Now you should have a directory C:\coding in which you have two directories, one called "allegro-5.0.8-msvc-11.0" and another one called "toast-master" or something like this.
+5. Go to C:\coding\toast-master\ToastFramework and open the file ToastFramework.sln with VS2012
+6. Right mouse click on the "ToastFramework" solution in the Solution Explorer on the left and choose "Build". Now take a cup of coffee (or tea) while VS builds it, but don't worry, it should only take a moment.
+7. Right mouse click on the "DEMO" solution and choose "Set as StartUp project" just to make sure you'll execute the game and not the generated .lib file for the framework (that however is not possible!)
+8. Use the provided DEMO solution to bootstrap your game project!
+9. Enjoy!
+
 Contribution
 --------------------------------------
 The code is thoroughly commented, but if you run into any problem, let me know! :)
