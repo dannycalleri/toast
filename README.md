@@ -36,8 +36,10 @@ Now follow these easy steps:
 5. Go to C:\coding\toast-master\ToastFramework and open the file ToastFramework.sln with VS2012
 6. Right mouse click on the "ToastFramework" solution in the Solution Explorer on the left and choose "Build". Now take a cup of coffee (or tea) while VS builds it, but don't worry, it should only take a moment.
 7. Right mouse click on the "DEMO" solution and choose "Set as StartUp project" just to make sure you'll execute the game and not the generated .lib file for the framework (that however is not possible!)
-8. Use the provided DEMO solution to bootstrap your game project!
+8. Use the provided DEMO solution to bootstrap your game project! Don't forget to put allegro's bin directory (allegro-5.0.8-msvc-11.0/bin) in the Windows path, otherwise when you try to execute the game it will give you an error regarding a missing dll file. Please follow this guide to update your system's PATH variable: http://msdn.microsoft.com/it-it/library/ee537574(v=office.14).aspx 
 9. Enjoy!
+
+I 
 
 Contribution
 --------------------------------------
