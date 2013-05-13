@@ -285,16 +285,11 @@ namespace Toast
 			scaleX = (windowWidth - scaleW)/2.0f;
 			scaleY = (windowHeight - scaleH)/2.0f;
 
-			/*if(sx != 0)
-				Input::mouseScaleX = 1.0f/sx;
-			if(sy != 0)
-				Input::mouseScaleY = 1.0f/sy;*/
+			Input::offsetY = scaleY;
 
-			//float mouseScale = max(sx, sy);
 			if(scale != 0)
 			{
-				Input::mouseScaleX = 1.0f/scale;
-				Input::mouseScaleY = 1.0f/scale;
+				Input::mouseScale = 1.0f/scale;
 			}
 		}
 

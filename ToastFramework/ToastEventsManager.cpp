@@ -51,10 +51,9 @@ namespace Toast
 			Input::mouseWindowX = ev.mouse.x;
 			Input::mouseWindowY = ev.mouse.y;
 
-			Input::mouseX = Input::mouseWindowX * Input::mouseScaleX;
-
-			// TODO: REMOVE HARDCODED VALUE!
-			Input::mouseY = Input::mouseWindowY * Input::mouseScaleY - 128.0f;
+			Input::mouseX = Input::mouseWindowX * Input::mouseScale;
+			Input::mouseY = (Input::mouseWindowY * Input::mouseScale) - (Input::offsetY * Input::mouseScale);
+			
 		}
 		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)
 		{

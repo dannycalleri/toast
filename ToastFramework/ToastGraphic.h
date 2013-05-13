@@ -62,8 +62,6 @@ namespace Toast
 
 		bool flipped;
 
-	private:
-
 		Point* point;
 	};
 }

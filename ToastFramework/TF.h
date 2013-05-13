@@ -60,6 +60,9 @@ namespace Toast
 		static void destroyAllTextures();
 		static void setCamera(float x = 0, float y = 0);
 		static void resetCamera();
+
+		// gives a random number between 0 and 1
+		static float random();
 	};
 }
 

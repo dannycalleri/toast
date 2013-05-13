@@ -11,6 +11,7 @@ Copyright (C) 2013 Danny Calleri
 #define TOASTENTITY_H
 
 #include "ToastCommon.h"
+#include <vector>
 
 namespace Toast
 {
@@ -20,6 +21,7 @@ namespace Toast
 		Entity(float x = 0.0f, float y = 0.0f);
 		virtual ~Entity();
 
+		void addGraphic(Graphic* graphic);
 		void setHitbox(int width, int height, float originX, float originY);
 		bool collideRect(float x, float y, float rX, float rY, float rWidth, float rHeight);
 
@@ -56,6 +58,8 @@ namespace Toast
 		*/
 		float _x;
 		float _y;
+
+		std::vector<Graphic*> graphicsList;
 	};
 }
 

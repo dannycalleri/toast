@@ -15,8 +15,8 @@ namespace Toast
 	int Input::mouseY = 0;
 	int Input::mouseWindowX = 0;
 	int Input::mouseWindowY = 0;
-	float Input::mouseScaleX = 0.0f;
-	float Input::mouseScaleY = 0.0f;
+	float Input::mouseScale = 0.0f;
+	float Input::offsetY = 0.0f;
 	bool Input::leftMousePressed = false;
 	bool Input::leftMouseDown = false;
 	bool Input::mouseReleased=false;

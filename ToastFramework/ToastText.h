@@ -19,18 +19,28 @@ namespace Toast
 	class Text : public Graphic
 	{
 	public:
-		Text(const std::string& text="");
+		/*
+			When you use fixed = true you must specify
+			width and height for this Graphic explicitly.
+			Fixed is just an optimization and tells 
+			that the Graphic doesn't change width
+			or height at runtime. This is useful for rendering
+			text that frequently changes (FPS counter).
+			In this way updateCanvas() doesn't reallocate memory
+			for this Text when it's called.
+		*/
+		Text(const std::string& text="", bool fixed=false, int width = 0, int height = 0);
 		virtual ~Text();
 
+		void updateCanvas();
 		virtual void update() {};
 		virtual void render();
 
 		Font* font;
 		std::string text;
+		bool isFixed;
 
 	private:
-		
-		void updateCanvas();
 		std::string tmpText; // text copy to optimize rendering
 
 		// a canvas in which 

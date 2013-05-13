@@ -33,8 +33,14 @@ namespace Toast
 		static int mouseWindowX;
 		static int mouseWindowY;
 
-		static float mouseScaleX;
-		static float mouseScaleY;
+		/**
+		*	Helpers for calculating mouse
+		*	coordinates on screen
+		*/
+		static float mouseScale;
+		static float offsetY;
+
+
 		static bool leftMousePressed;	// if LMB has been pressed in the current frame
 		static bool leftMouseDown;		// if LMB is held down by the user
 		static bool mouseReleased;

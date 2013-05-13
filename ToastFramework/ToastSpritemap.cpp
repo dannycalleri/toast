@@ -89,16 +89,23 @@ namespace Toast
 				}
 
 				if(anim) frame = anim->frames[index];
-				
-				updateSourceRect();
 
 			}
 		}
+
+		updateSourceRect();
 	}
 
 	void Spritemap::render()
 	{
-		Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, this->x, this->y, this->alpha, this->flipped);
+		if(relative)
+		{
+			Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, this->point->x, this->point->y, this->alpha, this->flipped);
+		}
+		else
+		{
+			Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, this->x, this->y, this->alpha, this->flipped);
+		}
 	}
 
 	void Spritemap::updateSourceRect()

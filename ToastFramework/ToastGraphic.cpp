@@ -13,7 +13,7 @@ namespace Toast
 {
 	Graphic::Graphic()
 	{
-		this->active = false;
+		this->active = true;
 		this->visible = true;
 		this->x = 0.0f;
 		this->y = 0.0f;
@@ -21,7 +21,7 @@ namespace Toast
 		this->height=0;
 		this->scrollX = 1.0f;
 		this->scrollY = 1.0f;
-		this->relative = true;
+		this->relative = false;
 		this->point = new Point();
 		this->flipped = false;
 		this->alpha=1.0f;

@@ -37,7 +37,7 @@ namespace Toast
 		int frameWidth;
 		int frameHeight;
 
-	private:
+	protected:
 
 		void updateSourceRect();
 

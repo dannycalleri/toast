@@ -9,6 +9,8 @@ Copyright (C) 2013 Danny Calleri
 
 #include "TF.h"
 #include "ToastTexture.h"
+#include "ToastEngine.h"
+#include "ToastRandom.h"
 
 #include <iostream>
 
@@ -69,5 +71,10 @@ namespace Toast
 	void TF::resetCamera()
 	{
 		TF::camera->x = TF::camera->y = 0;
+	}
+
+	float TF::random()
+	{
+		return TF::engine->random->Random();
 	}
 }

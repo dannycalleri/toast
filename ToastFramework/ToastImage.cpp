@@ -10,11 +10,13 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastImage.h"
 #include "ToastTexture.h"
 #include "ToastGraphics.h"
+#include <iostream>
 
 namespace Toast
 {
 	Image::Image(const std::string& fileName)
 	{
+		Graphic::Graphic();
 		this->texture=0;
 		if(fileName != "")
 			this->texture = Graphics::LoadTexture(fileName);
@@ -36,6 +38,15 @@ namespace Toast
 	void Image::render()
 	{
 		if(texture)
-			Graphics::Draw(this->texture, this->x, this->y, this->flipped);
+		{
+			if(relative)
+			{
+				Graphics::Draw(this->texture, this->point->x, this->point->y, this->flipped);
+			}
+			else
+			{
+				Graphics::Draw(this->texture, this->x, this->y, this->flipped);
+			}
+		}
 	}
 }

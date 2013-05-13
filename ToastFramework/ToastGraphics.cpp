@@ -51,14 +51,15 @@ namespace Toast
 
 			texture = new Texture();
 			texture->tex = al_load_bitmap(fileName.c_str());
-			texture->setWidth(al_get_bitmap_width(texture->tex));
-			texture->setHeight(al_get_bitmap_height(texture->tex));
 
 			if(!texture->tex)
 			{
 				TOAST_ERROR("[TEXTURE] ERROR loading allegro texture");
 				return NULL;
 			}
+
+			texture->setWidth(al_get_bitmap_width(texture->tex));
+			texture->setHeight(al_get_bitmap_height(texture->tex));
 
 			// inserting texture in the map
 			// for managing resources
@@ -118,9 +119,20 @@ namespace Toast
 		//al_draw_bitmap(canvas->getBuffer(), canvas->x, canvas->x, 0);
 		//al_draw_tinted_bitmap(canvas->getBuffer(), al_map_rgba_f(1.0f, 1.0f, 1.0f, canvas->alpha), canvas->x, canvas->x, 0);
 
-		al_draw_tinted_bitmap(canvas->getBuffer(), 
+		if(canvas->relative)
+		{
+			al_draw_tinted_bitmap(canvas->getBuffer(), 
+							  al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
+							  canvas->point->x, canvas->point->y, 0);
+		}
+		else
+		{
+			al_draw_tinted_bitmap(canvas->getBuffer(), 
 							  al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
 							  canvas->x, canvas->y, 0);
+
+			//std::cout << "CANVAS RENDER: " << "\n";
+		}
 	}
 
 	void Graphics::DrawTextFont(Font* font, const std::string& text, byte r, byte g, byte b, float x, float y)

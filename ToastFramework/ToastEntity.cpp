@@ -29,10 +29,16 @@ namespace Toast
 		_x = 0;
 		_y = 0;
 		alpha=1.0f;
+		graphicsList.clear();
 	}
 
 	Entity::~Entity()
 	{
+		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
+		{
+			std::cout << "[ENTITY destroy] destroying graphic " << i << "\n";
+			delete graphicsList[i];
+		}
 	}
 
 	void Entity::setHitbox(int width, int height, float originX, float originY)
@@ -54,6 +60,12 @@ namespace Toast
 		return false;
 	}
 
+	void Entity::addGraphic(Graphic* graphic)
+	{
+		graphic->relative=true;
+		graphicsList.push_back(graphic);
+	}
+
 	void Entity::update()
 	{
 		if(graphic && graphic->active)
@@ -62,6 +74,19 @@ namespace Toast
 			graphic->y = this->y;
 			graphic->alpha = this->alpha;
 			graphic->update();
+		}
+
+		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
+		{
+			Graphic* g = graphicsList[i];
+			if(g->active)
+			{
+				g->point->x = this->x;
+				g->point->y = this->y;
+				g->point->x += g->x;
+				g->point->y += g->y;
+				g->update();
+			}
 		}
 	}
 
@@ -77,6 +102,12 @@ namespace Toast
 			//	//std::cout << "ENEMENE\n";
 			//	al_draw_rectangle(this->x, this->y, this->x + this->width, this->y + this->height, al_map_rgb(255,0,0), 2);
 			//}
+		}
+
+		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
+		{
+			Graphic* g = graphicsList[i];
+			if(g->visible) g->render();
 		}
 	}
 }

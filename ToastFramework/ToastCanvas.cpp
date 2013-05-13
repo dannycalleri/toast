@@ -103,7 +103,14 @@ namespace Toast
 		if(al_get_target_bitmap() != this->buffer)
 			al_set_target_bitmap(this->buffer);
 
-		Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, text->x, text->y);
+		//if(text->relative)
+		//{
+			//Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, text->point->x, text->point->y);
+		//}
+		//else
+		//{
+			Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, text->x, text->y);
+		//}
 
 		TF::engine->resetRenderingBuffer();
 	}
