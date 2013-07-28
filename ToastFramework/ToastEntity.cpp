@@ -68,25 +68,21 @@ namespace Toast
 
 	void Entity::update()
 	{
-		if(graphic && graphic->active)
+		if(graphic)
 		{
-			graphic->x = this->x;
-			graphic->y = this->y;
+			graphic->relative = true;
+			graphic->point->x = this->x;
+			graphic->point->y = this->y;
 			graphic->alpha = this->alpha;
-			graphic->update();
+			if(graphic->active) graphic->update();
 		}
 
 		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
 		{
 			Graphic* g = graphicsList[i];
-			if(g->active)
-			{
-				g->point->x = this->x;
-				g->point->y = this->y;
-				g->point->x += g->x;
-				g->point->y += g->y;
-				g->update();
-			}
+			g->point->x = this->x;
+			g->point->y = this->y;
+			if(g->active) g->update();
 		}
 	}
 

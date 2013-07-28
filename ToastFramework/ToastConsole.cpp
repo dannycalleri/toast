@@ -119,11 +119,11 @@ namespace Toast
 	void Console::selectEntities()
 	{
 		Entity* tmp = 0;
-		for(int i=0;  i < TF::world->entities.size(); i++)
+		for(size_t i=0;  i < TF::world->entities.size(); i++)
 		{
 			tmp = TF::world->entities[i];
 
-			Rectangle tmpRect(startPoint->x, startPoint->y, endPoint->x - startPoint->x, endPoint->y - startPoint->y);
+			Rectangle tmpRect(startPoint->x + TF::camera->x, startPoint->y + TF::camera->y, endPoint->x - startPoint->x, endPoint->y - startPoint->y);
 			
 			Rectangle rect;
 			rect.x = tmpRect.x;
@@ -151,7 +151,7 @@ namespace Toast
 		Entity* tmp = 0;
 		// clean vector
 		selectedMouseOffsets.clear();
-		for(int i=0; i < selectedEntities.size(); i++)
+		for(size_t i=0; i < selectedEntities.size(); i++)
 		{
 			tmp = selectedEntities[i];
 
@@ -165,7 +165,7 @@ namespace Toast
 	void Console::moveEntities()
 	{
 		Entity* tmp = 0;
-		for(int i=0; i < selectedEntities.size(); i++)
+		for(size_t i=0; i < selectedEntities.size(); i++)
 		{
 			tmp = selectedEntities[i];
 
@@ -235,11 +235,11 @@ namespace Toast
 			// loop through all the entities and
 			// render their hitboxes
 			Entity* tmp=0;
-			for(int i=0; i < TF::world->entities.size(); i++)
+			for(size_t i=0; i < TF::world->entities.size(); i++)
 			{
 				tmp = TF::world->entities[i];
 
-				Rectangle rect(tmp->x, tmp->y, tmp->width, tmp->height);
+				Rectangle rect(tmp->x - TF::camera->x, tmp->y - TF::camera->y, tmp->width, tmp->height);
 				canvas->drawRect(&rect, this->r, this->g, this->b, this->thickness);
 			}
 
@@ -247,11 +247,11 @@ namespace Toast
 			//std::cout << "SELECTED ENTITIES : " << selectedEntities.size() << "\n";
 			// DRAWING SELECTED ENTITIES
 			tmp = 0;
-			for(int i=0; i < selectedEntities.size(); i++)
+			for(size_t i=0; i < selectedEntities.size(); i++)
 			{
 				tmp = selectedEntities[i];
 
-				Rectangle rect(tmp->x, tmp->y, tmp->width, tmp->height);
+				Rectangle rect(tmp->x - TF::camera->x, tmp->y - TF::camera->y, tmp->width, tmp->height);
 				canvas->drawRect(&rect, 255, 255, 0, this->thickness);
 			}
 
@@ -259,6 +259,9 @@ namespace Toast
 			{
 				canvas->drawRect(selectionRect, 255, 255, 0, this->thickness);
 			}
+
+			canvas->x = TF::camera->x;
+			canvas->y = TF::camera->y;
 
 			if(canvas->visible)
 				canvas->render();

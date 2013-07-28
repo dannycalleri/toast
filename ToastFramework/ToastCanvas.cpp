@@ -48,7 +48,16 @@ namespace Toast
 	void Canvas::render()
 	{
 		//std::cout << "[CANVAS] ALPHA: " << this->alpha << "\n";
-		Graphics::DrawCanvas(this);
+		float renderX = this->x - TF::camera->x;
+		float renderY = this->y - TF::camera->y;
+
+		if(relative) 
+		{
+			renderX += this->point->x;
+			renderY += this->point->y;
+		}
+
+		Graphics::DrawCanvas(this, renderX, renderY);
 	}
 
 	void Canvas::clear(byte r, byte g, byte b)

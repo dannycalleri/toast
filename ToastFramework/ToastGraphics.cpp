@@ -106,7 +106,7 @@ namespace Toast
 		}
 	}
 
-	void Graphics::DrawCanvas(Canvas* canvas)
+	void Graphics::DrawCanvas(Canvas* canvas, float destX, float destY)
 	{
 		if(!canvas)
 		{
@@ -119,20 +119,9 @@ namespace Toast
 		//al_draw_bitmap(canvas->getBuffer(), canvas->x, canvas->x, 0);
 		//al_draw_tinted_bitmap(canvas->getBuffer(), al_map_rgba_f(1.0f, 1.0f, 1.0f, canvas->alpha), canvas->x, canvas->x, 0);
 
-		if(canvas->relative)
-		{
-			al_draw_tinted_bitmap(canvas->getBuffer(), 
-							  al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
-							  canvas->point->x, canvas->point->y, 0);
-		}
-		else
-		{
-			al_draw_tinted_bitmap(canvas->getBuffer(), 
-							  al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
-							  canvas->x, canvas->y, 0);
-
-			//std::cout << "CANVAS RENDER: " << "\n";
-		}
+		al_draw_tinted_bitmap(canvas->getBuffer(), 
+							al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
+							destX, destY, 0);
 	}
 
 	void Graphics::DrawTextFont(Font* font, const std::string& text, byte r, byte g, byte b, float x, float y)
