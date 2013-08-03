@@ -48,8 +48,8 @@ namespace Toast
 	void Canvas::render()
 	{
 		//std::cout << "[CANVAS] ALPHA: " << this->alpha << "\n";
-		float renderX = this->x - TF::camera->x;
-		float renderY = this->y - TF::camera->y;
+		float renderX = this->x - TF::camera->x * this->scrollX;
+		float renderY = this->y - TF::camera->y * this->scrollY;
 
 		if(relative) 
 		{
@@ -102,7 +102,7 @@ namespace Toast
 		if(al_get_target_bitmap() != this->buffer)
 			al_set_target_bitmap(this->buffer);
 
-		Graphics::DrawRegion(texture, srcRect->x, srcRect->y, srcRect->width, srcRect->height, x, y, alpha, flipped);
+		Graphics::DrawRegion(texture, srcRect->x, srcRect->y, srcRect->width, srcRect->height, x, y, alpha, flipped, 0.0f);
 
 		TF::engine->resetRenderingBuffer();
 	}

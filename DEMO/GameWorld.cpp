@@ -67,15 +67,17 @@ namespace Toast
 		goblin2 = new Entity();
 		goblin2->x = 1000;
 		goblin2->y = 400;
-		goblin2->setHitbox(spriteMap2->frameWidth, spriteMap2->frameHeight, 0.0, 0.0);
+		goblin2->setHitboxTo(spriteMap2);
 		goblin2->graphic = spriteMap2;
 		add(goblin2);
 
 		controlsHelp = new Image("controls.png");
-		controlsHelp->x = pressEnter->x;
+		controlsHelp->x = pressEnter->x + controlsHelp->width / 2;
 		controlsHelp->y = pressEnter->y - controlsHelp->height;
 		controlsHelp->alpha = 1.0f;
 		controlsHelp->relative = true;
+		controlsHelp->centerOrigin();
+		controlsHelp->angle = -0.05f;
 		addGraphic(controlsHelp);
 
 		// goblin2 initially go to the left

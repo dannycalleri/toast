@@ -69,7 +69,7 @@ namespace Toast
 		return texture;
 	}
 
-	void Graphics::Draw(Texture* source, float destX, float destY, bool flipped)
+	void Graphics::Draw(Texture* source, float destX, float destY, bool flipped, float angle)
 	{
 		if(!source)
 		{
@@ -78,14 +78,17 @@ namespace Toast
 			return;
 		}
 
-		if(!flipped)
-			al_draw_bitmap(source->tex, destX, destY, 0);
-		else
-			al_draw_bitmap(source->tex, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
+		if(angle == 0.0f) {
+			if(!flipped) al_draw_bitmap(source->tex, destX, destY, 0);
+			else al_draw_bitmap(source->tex, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
+		} else {
+			if(!flipped) al_draw_rotated_bitmap(source->tex, 0.0f, 0.0f, destX, destY, angle, 0);
+			else al_draw_rotated_bitmap(source->tex, 0.0f, 0.0f, destX, destY, angle, ALLEGRO_FLIP_HORIZONTAL);
+		}
 	}
 
 	void Graphics::DrawRegion(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, 
-							  float destX, float destY, float alpha, bool flipped)
+							  float destX, float destY, float alpha, bool flipped, float angle)
 	{
 		if(!source)
 		{
@@ -94,15 +97,33 @@ namespace Toast
 			return;
 		}
 
-		if(!flipped)
+		if(angle == 0.0f) 
 		{
-			al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
-										 srcX, srcY, srcWidth, srcHeight, destX, destY, 0);
+			if(!flipped)
+			{
+				al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
+											 srcX, srcY, srcWidth, srcHeight, destX, destY, 0);
+			}
+			else
+			{
+				al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
+											 srcX, srcY, srcWidth, srcHeight, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
+			}
 		}
 		else
 		{
-			al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
-										 srcX, srcY, srcWidth, srcHeight, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
+			if(!flipped)
+			{
+				al_draw_tinted_scaled_rotated_bitmap_region(source->tex, srcX, srcY, srcWidth, srcHeight, 
+															al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha),
+															0.0f, 0.0f, destX, destY, 1.0f, 1.0f, angle, 0);
+			}
+			else
+			{
+				al_draw_tinted_scaled_rotated_bitmap_region(source->tex, srcX, srcY, srcWidth, srcHeight, 
+															al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha),
+															0.0f, 0.0f, destX, destY, 1.0f, 1.0f, angle, ALLEGRO_FLIP_HORIZONTAL);
+			}
 		}
 	}
 

@@ -9,6 +9,8 @@ Copyright (C) 2013 Danny Calleri
 
 #include "ToastEntity.h"
 #include "ToastGraphic.h"
+#include "ToastImage.h"
+#include "ToastSpritemap.h"
 
 #include <iostream>
 
@@ -47,6 +49,30 @@ namespace Toast
 		this->height = height;
 		this->originX = originX;
 		this->originY = originY;
+	}
+
+	void Entity::setHitboxTo(Graphic* graphic)
+	{
+		this->width = graphic->width;
+		this->height = graphic->height;
+		this->originX = graphic->x;
+		this->originY = graphic->y;
+	}
+
+	void Entity::setHitboxTo(Image* image)
+	{
+		this->width = image->width;
+		this->height = image->height;
+		this->originX = image->originX;
+		this->originY = image->originY;
+	}
+
+	void Entity::setHitboxTo(Spritemap* smap)
+	{
+		this->width = smap->frameWidth;
+		this->height = smap->frameHeight;
+		this->originX = smap->originX;
+		this->originY = smap->originY;
 	}
 
 	bool Entity::collideRect(float x, float y, float rX, float rY, float rWidth, float rHeight)

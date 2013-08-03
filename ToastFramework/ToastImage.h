@@ -25,6 +25,8 @@ namespace Toast
 		virtual void update() {};
 		virtual void render();
 
+		void centerOrigin();
+
 	public:
 		float angle;
 		float scale;

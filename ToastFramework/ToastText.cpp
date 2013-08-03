@@ -53,14 +53,15 @@ namespace Toast
 
 	void Text::render()
 	{
-		if(isFixed)
-			updateCanvas();
+		if(isFixed) updateCanvas();
 
 		canvas->relative = this->relative;
 		canvas->point->x = this->point->x;
 		canvas->point->y = this->point->y;
 		canvas->x = this->x;
 		canvas->y = this->y;
+		canvas->scrollX = this->scrollX;
+		canvas->scrollY = this->scrollY;
 		canvas->render();
 	}
 }
