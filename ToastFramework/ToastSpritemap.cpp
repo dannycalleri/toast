@@ -98,14 +98,16 @@ namespace Toast
 
 	void Spritemap::render()
 	{
+		float renderX = this->x - this->originX - TF::camera->x * this->scrollX;
+		float renderY = this->y - this->originY - TF::camera->y * this->scrollY;
+
 		if(relative)
 		{
-			Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, this->point->x, this->point->y, this->alpha, this->flipped);
+			renderX += this->point->x;
+			renderY += this->point->y;
 		}
-		else
-		{
-			Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, this->x, this->y, this->alpha, this->flipped);
-		}
+
+		Graphics::DrawRegion(this->texture, rect->x, rect->y, rect->width, rect->height, renderX, renderY, this->alpha, this->flipped, this->angle);
 	}
 
 	void Spritemap::updateSourceRect()

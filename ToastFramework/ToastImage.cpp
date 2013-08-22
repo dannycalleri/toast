@@ -39,14 +39,22 @@ namespace Toast
 	{
 		if(texture)
 		{
+			float renderX = this->x - this->originX - TF::camera->x * this->scrollX;
+			float renderY = this->y - this->originY - TF::camera->y * this->scrollY;
+
 			if(relative)
 			{
-				Graphics::Draw(this->texture, this->point->x, this->point->y, this->flipped);
+				renderX += this->point->x;
+				renderY += this->point->y;
 			}
-			else
-			{
-				Graphics::Draw(this->texture, this->x, this->y, this->flipped);
-			}
+
+			Graphics::Draw(this->texture, renderX, renderY, this->flipped, this->angle);
 		}
+	}
+
+	void Image::centerOrigin()
+	{
+		originX = (float)(this->width) * 0.5f;
+		originY = (float)(this->height) * 0.5f;
 	}
 }

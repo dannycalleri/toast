@@ -9,6 +9,8 @@ Copyright (C) 2013 Danny Calleri
 
 #include "ToastEntity.h"
 #include "ToastGraphic.h"
+#include "ToastImage.h"
+#include "ToastSpritemap.h"
 
 #include <iostream>
 
@@ -49,6 +51,30 @@ namespace Toast
 		this->originY = originY;
 	}
 
+	void Entity::setHitboxTo(Graphic* graphic)
+	{
+		this->width = graphic->width;
+		this->height = graphic->height;
+		this->originX = graphic->x;
+		this->originY = graphic->y;
+	}
+
+	void Entity::setHitboxTo(Image* image)
+	{
+		this->width = image->width;
+		this->height = image->height;
+		this->originX = image->originX;
+		this->originY = image->originY;
+	}
+
+	void Entity::setHitboxTo(Spritemap* smap)
+	{
+		this->width = smap->frameWidth;
+		this->height = smap->frameHeight;
+		this->originX = smap->originX;
+		this->originY = smap->originY;
+	}
+
 	bool Entity::collideRect(float x, float y, float rX, float rY, float rWidth, float rHeight)
 	{
 		if (x - originX + width >= rX && y - originY + height >= rY &&
@@ -68,25 +94,21 @@ namespace Toast
 
 	void Entity::update()
 	{
-		if(graphic && graphic->active)
+		if(graphic)
 		{
-			graphic->x = this->x;
-			graphic->y = this->y;
+			graphic->relative = true;
+			graphic->point->x = this->x;
+			graphic->point->y = this->y;
 			graphic->alpha = this->alpha;
-			graphic->update();
+			if(graphic->active) graphic->update();
 		}
 
 		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
 		{
 			Graphic* g = graphicsList[i];
-			if(g->active)
-			{
-				g->point->x = this->x;
-				g->point->y = this->y;
-				g->point->x += g->x;
-				g->point->y += g->y;
-				g->update();
-			}
+			g->point->x = this->x;
+			g->point->y = this->y;
+			if(g->active) g->update();
 		}
 	}
 
