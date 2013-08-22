@@ -30,6 +30,7 @@ namespace Toast
 
 		Text* demoText;
 		Text* pressEnter;
+		Image* controlsHelp;
 		
 	};
 }

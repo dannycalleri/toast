@@ -23,6 +23,9 @@ namespace Toast
 
 		void addGraphic(Graphic* graphic);
 		void setHitbox(int width, int height, float originX, float originY);
+		void setHitboxTo(Graphic* graphic);
+		void setHitboxTo(Image* image);
+		void setHitboxTo(Spritemap* smap);
 		bool collideRect(float x, float y, float rX, float rY, float rWidth, float rHeight);
 
 		virtual void update();

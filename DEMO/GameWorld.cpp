@@ -16,18 +16,21 @@
 namespace Toast
 {
 	GameWorld::GameWorld()
+		:World()
 	{
-		World::World();
-
-		tileMap = new Tilemap("tile_caverna.png", 2560, 1600, 512, 400);
+		tileMap = new Tilemap("tile_caverna.png", 512*10, 400*8, 512, 400);
 		tileMap->setTile(0,0,1);
 		tileMap->setTile(0,1,1);
 
 
-		std::string level = "1,1,1,1,1\n"
-							"0,0,0,0,0\n"
-							"1,1,1,1,1\n"
-							"0,0,0,0,0\n";
+		std::string level = "1,1,1,1,1,1,1,1,1,1\n"
+							"0,0,0,0,0,0,0,0,0,0\n"
+							"1,1,1,1,1,1,1,1,1,1\n"
+							"0,0,0,0,0,0,0,0,0,0\n"
+							"0,0,0,0,0,0,0,0,0,0\n"
+							"1,1,1,1,1,1,1,1,1,1\n"
+							"1,1,1,1,1,1,1,1,1,1\n"
+							"0,0,0,0,0,0,0,0,0,0\n";
 
 		tileMap->loadFromString(level);
 		tileMap->alpha=1.0f;
@@ -45,10 +48,12 @@ namespace Toast
 		spriteMap2->play("IDLE");
 
 		demoText = new Text("TOAST FRAMEWORK - DEMO");
+		demoText->relative = true;
 		addGraphic(demoText);
 
 		pressEnter = new Text("PRESS [ENTER] for Debug mode");
 		pressEnter->y = TF::height - pressEnter->height;
+		pressEnter->relative = true;
 		addGraphic(pressEnter);
 
 		goblin1 = new Entity();
@@ -62,9 +67,18 @@ namespace Toast
 		goblin2 = new Entity();
 		goblin2->x = 1000;
 		goblin2->y = 400;
-		goblin2->setHitbox(spriteMap2->frameWidth, spriteMap2->frameHeight, 0.0, 0.0);
+		goblin2->setHitboxTo(spriteMap2);
 		goblin2->graphic = spriteMap2;
 		add(goblin2);
+
+		controlsHelp = new Image("controls.png");
+		controlsHelp->x = pressEnter->x + controlsHelp->width / 2;
+		controlsHelp->y = pressEnter->y - controlsHelp->height;
+		controlsHelp->alpha = 1.0f;
+		controlsHelp->relative = true;
+		controlsHelp->centerOrigin();
+		controlsHelp->angle = -0.05f;
+		addGraphic(controlsHelp);
 
 		// goblin2 initially go to the left
 		dir=-1;
@@ -111,6 +125,29 @@ namespace Toast
 			goblin1->graphic->flipped=true;
 		}
 
+		if(Input::down(TOAST_KEY_A)) 
+		{
+			TF::camera->x -= 300 * TF::elapsed;
+		}
+
+		if(Input::down(TOAST_KEY_D)) 
+		{
+			TF::camera->x += 300 * TF::elapsed;
+		}
+
+		if(Input::down(TOAST_KEY_W)) {
+			TF::camera->y -= 300 * TF::elapsed;
+		}
+
+		if(Input::down(TOAST_KEY_S)) 
+		{
+			TF::camera->y += 300 * TF::elapsed;
+		}
+
+		if(Input::down(TOAST_KEY_ESCAPE)) 
+		{
+			TF::engine->onExit();
+		}
 
 		// logic for goblin2
 		goblin2->x += 300*dir*TF::elapsed;
@@ -130,6 +167,11 @@ namespace Toast
 			std::cout << "GOBLINS COLLIDING!\n";
 		}
 
+		demoText->point->x = TF::camera->x;
+		demoText->point->y = TF::camera->y;
+		pressEnter->point->x = TF::camera->x;
+		pressEnter->point->y = TF::camera->y;
+		controlsHelp->point->x = TF::camera->x;
+		controlsHelp->point->y = TF::camera->y;
 	}
-
 }
