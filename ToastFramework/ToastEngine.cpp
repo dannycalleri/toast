@@ -18,6 +18,9 @@ Copyright (C) 2013 Danny Calleri
 #include <algorithm>
 using namespace std;
 
+//#define TOAST_OPENGL
+#define TOAST_DIRECT3D
+
 namespace Toast
 {
 	Engine::Engine(unsigned int width, unsigned int height, bool fullscreen)
@@ -219,12 +222,15 @@ namespace Toast
 		{
 			al_get_display_mode(al_get_num_display_modes() - 1, &disp_data);
 
-			//qqq
-			al_set_new_display_flags(ALLEGRO_OPENGL);
-			//al_set_new_display_flags(ALLEGRO_DIRECT3D);
-
 			// fullscreen mode
-			al_set_new_display_flags(ALLEGRO_FULLSCREEN);
+#ifdef TOAST_DIRECT3D
+			al_set_new_display_flags(ALLEGRO_DIRECT3D | ALLEGRO_FULLSCREEN);
+#endif
+
+#ifdef TOAST_OPENGL
+			al_set_new_display_flags(ALLEGRO_OPENGL | ALLEGRO_FULLSCREEN);
+#endif
+
 			// linear filtering
 			al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
 
@@ -252,12 +258,15 @@ namespace Toast
 			float windowWidth = 1024.0f;
 			float windowHeight = 768.0f;
 
-			//qqq
-			al_set_new_display_flags(ALLEGRO_OPENGL);
-			//al_set_new_display_flags(ALLEGRO_DIRECT3D);
-
 			// full screen window
-			al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+#ifdef TOAST_DIRECT3D
+			al_set_new_display_flags(ALLEGRO_DIRECT3D | ALLEGRO_FULLSCREEN_WINDOW);
+#endif
+
+#ifdef TOAST_OPENGL
+			al_set_new_display_flags(ALLEGRO_OPENGL | ALLEGRO_FULLSCREEN_WINDOW);
+#endif
+			
 			// linear filtering
 			al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
 
