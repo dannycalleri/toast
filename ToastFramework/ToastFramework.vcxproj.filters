@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\RapidXML">
+      <UniqueIdentifier>{b6dd1553-7221-4d82-b2c1-3a28012f9472}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TF.h">
@@ -93,6 +96,24 @@
     <ClInclude Include="ToastWorld.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rapidxml-1.13\rapidxml.hpp">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
+    <ClInclude Include="rapidxml-1.13\rapidxml_iterators.hpp">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
+    <ClInclude Include="rapidxml-1.13\rapidxml_print.hpp">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
+    <ClInclude Include="rapidxml-1.13\rapidxml_utils.hpp">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
+    <ClInclude Include="ToastHitbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ToastGrid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TF.cpp">
@@ -153,6 +174,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ToastWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToastMask.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToastHitbox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToastGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

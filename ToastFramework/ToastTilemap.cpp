@@ -19,7 +19,7 @@ Copyright (C) 2013 Danny Calleri
 namespace Toast
 {
 	Tilemap::Tilemap(const std::string& fileName, unsigned int width, unsigned int height, unsigned int tileWidth, unsigned int tileHeight) :
-		Canvas(width,height,false)
+		Canvas(width,height,true)
 	{
 		this->tileset = Graphics::LoadTexture(fileName);
 		this->width = width;
@@ -28,7 +28,7 @@ namespace Toast
 		this->rows = std::ceil( float(height) / tileHeight );
 		this->tile = new Rectangle(0, 0, tileWidth, tileHeight);
 
-		std::cout << "TILEMAP COLS: " << this->columns << " ROWS: " << this->rows << "\n";
+		//std::cout << "TILEMAP COLS: " << this->columns << " ROWS: " << this->rows << "\n";
 
 		this->setColumns = std::ceil( float(tileset->getWidth()) / tile->width );
 		this->setRows = std::ceil( float( tileset->getHeight()) / tile->height );
@@ -36,8 +36,8 @@ namespace Toast
 
 		this->point = new Point(0.0f, 0.0f);
 
-		std::cout << "TILESET COLS: " << this->setColumns << " ROWS: " << this->setRows << "\n";
-		std::cout << "TILESET COUNT: " << this->setCount << "\n";
+		//std::cout << "TILESET COLS: " << this->setColumns << " ROWS: " << this->setRows << "\n";
+		//std::cout << "TILESET COUNT: " << this->setCount << "\n";
 	}
 
 	Tilemap::~Tilemap()

@@ -18,24 +18,8 @@ namespace Toast
 	GameWorld::GameWorld()
 		:World()
 	{
-		tileMap = new Tilemap("tile_caverna.png", 512*10, 400*8, 512, 400);
-		tileMap->setTile(0,0,1);
-		tileMap->setTile(0,1,1);
-
-
-		std::string level = "1,1,1,1,1,1,1,1,1,1\n"
-							"0,0,0,0,0,0,0,0,0,0\n"
-							"1,1,1,1,1,1,1,1,1,1\n"
-							"0,0,0,0,0,0,0,0,0,0\n"
-							"0,0,0,0,0,0,0,0,0,0\n"
-							"1,1,1,1,1,1,1,1,1,1\n"
-							"1,1,1,1,1,1,1,1,1,1\n"
-							"0,0,0,0,0,0,0,0,0,0\n";
-
-		tileMap->loadFromString(level);
-		tileMap->alpha=1.0f;
-
-		addGraphic(this->tileMap);
+		level = new Level();
+		add(level);
 
 		spriteMap = new Spritemap("animazione_loop_goblin.png", 180, 204);
 		int idleFrames[] = {0,1,2,3,4,5,6,7,8,9};

@@ -4,6 +4,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ToastFramework", "ToastFramework.vcxproj", "{61DFB81A-E5F8-43D6-9203-601843019C95}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEMO", "..\DEMO\DEMO.vcxproj", "{FD33F4B2-010D-49FA-B8F5-34D62F7E927A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{61DFB81A-E5F8-43D6-9203-601843019C95} = {61DFB81A-E5F8-43D6-9203-601843019C95}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ROGUELIKE", "..\ROGUELIKE\ROGUELIKE.vcxproj", "{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{61DFB81A-E5F8-43D6-9203-601843019C95} = {61DFB81A-E5F8-43D6-9203-601843019C95}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +27,10 @@ Global
 		{FD33F4B2-010D-49FA-B8F5-34D62F7E927A}.Debug|Win32.Build.0 = Debug|Win32
 		{FD33F4B2-010D-49FA-B8F5-34D62F7E927A}.Release|Win32.ActiveCfg = Release|Win32
 		{FD33F4B2-010D-49FA-B8F5-34D62F7E927A}.Release|Win32.Build.0 = Release|Win32
+		{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}.Debug|Win32.Build.0 = Debug|Win32
+		{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}.Release|Win32.ActiveCfg = Release|Win32
+		{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

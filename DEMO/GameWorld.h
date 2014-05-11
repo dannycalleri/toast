@@ -3,6 +3,7 @@
 
 #include "ToastCommon.h"
 #include "ToastWorld.h"
+#include "Level.h"
 
 #include <string>
 
@@ -22,7 +23,9 @@ namespace Toast
 		
 		Spritemap* spriteMap;
 		Spritemap* spriteMap2;
-		Tilemap* tileMap;
+		//Tilemap* tileMap;
+
+		Level* level;
 
 		Entity* goblin1;
 		Entity* goblin2;

@@ -43,7 +43,7 @@ namespace Toast
 	{
 		Texture* texture = TF::getTexture(fileName);
 
-		std::cout << "[TEXTURE] Loading texture \" " << fileName << "\" \n";
+		//std::cout << "[TEXTURE] Loading texture \" " << fileName << "\" \n";
 
 		if(!texture)
 		{

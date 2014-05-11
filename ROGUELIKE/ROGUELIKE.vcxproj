@@ -11,71 +11,28 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="rapidxml-1.13\rapidxml.hpp" />
-    <ClInclude Include="rapidxml-1.13\rapidxml_iterators.hpp" />
-    <ClInclude Include="rapidxml-1.13\rapidxml_print.hpp" />
-    <ClInclude Include="rapidxml-1.13\rapidxml_utils.hpp" />
-    <ClInclude Include="TF.h" />
-    <ClInclude Include="Toast.h" />
-    <ClInclude Include="ToastAnim.h" />
-    <ClInclude Include="ToastCanvas.h" />
-    <ClInclude Include="ToastCommon.h" />
-    <ClInclude Include="ToastConsole.h" />
-    <ClInclude Include="ToastEngine.h" />
-    <ClInclude Include="ToastEntity.h" />
-    <ClInclude Include="ToastError.h" />
-    <ClInclude Include="ToastEventsManager.h" />
-    <ClInclude Include="ToastFont.h" />
-    <ClInclude Include="ToastGraphic.h" />
-    <ClInclude Include="ToastGraphics.h" />
-    <ClInclude Include="ToastGrid.h" />
-    <ClInclude Include="ToastHitbox.h" />
-    <ClInclude Include="ToastImage.h" />
-    <ClInclude Include="ToastInput.h" />
-    <ClInclude Include="ToastKeycodes.h" />
-    <ClInclude Include="ToastMask.h" />
-    <ClInclude Include="ToastRandom.h" />
-    <ClInclude Include="ToastSprite.h" />
-    <ClInclude Include="ToastSpritemap.h" />
-    <ClInclude Include="ToastSpriteSheet.h" />
-    <ClInclude Include="ToastText.h" />
-    <ClInclude Include="ToastTexture.h" />
-    <ClInclude Include="ToastTilemap.h" />
-    <ClInclude Include="ToastTypes.h" />
-    <ClInclude Include="ToastWorld.h" />
+    <ClInclude Include="Door.h" />
+    <ClInclude Include="Dungeon.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="GameWorld.h" />
+    <ClInclude Include="Room.h" />
+    <ClInclude Include="RoomsManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TF.cpp" />
-    <ClCompile Include="ToastAnim.cpp" />
-    <ClCompile Include="ToastCanvas.cpp" />
-    <ClCompile Include="ToastConsole.cpp" />
-    <ClCompile Include="ToastEngine.cpp" />
-    <ClCompile Include="ToastEntity.cpp" />
-    <ClCompile Include="ToastEventsManager.cpp" />
-    <ClCompile Include="ToastFont.cpp" />
-    <ClCompile Include="ToastGraphic.cpp" />
-    <ClCompile Include="ToastGraphics.cpp" />
-    <ClCompile Include="ToastGrid.cpp" />
-    <ClCompile Include="ToastHitbox.cpp" />
-    <ClCompile Include="ToastImage.cpp" />
-    <ClCompile Include="ToastInput.cpp" />
-    <ClCompile Include="ToastMask.cpp" />
-    <ClCompile Include="ToastRandom.cpp" />
-    <ClCompile Include="ToastSprite.cpp" />
-    <ClCompile Include="ToastSpritemap.cpp" />
-    <ClCompile Include="ToastSpriteSheet.cpp" />
-    <ClCompile Include="ToastText.cpp" />
-    <ClCompile Include="ToastTexture.cpp" />
-    <ClCompile Include="ToastTilemap.cpp" />
-    <ClCompile Include="ToastWorld.cpp" />
+    <ClCompile Include="Dungeon.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameWorld.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Room.cpp" />
+    <ClCompile Include="RoomsManager.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{61DFB81A-E5F8-43D6-9203-601843019C95}</ProjectGuid>
-    <RootNamespace>ToastFramework</RootNamespace>
+    <ProjectGuid>{5C7C3FD6-E1EE-4629-97CB-7482DD9FD82F}</ProjectGuid>
+    <RootNamespace>DEMO</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -98,8 +55,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\allegro-5.0.8-msvc-11.0\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\allegro-5.0.8-msvc-11.0\lib;..\ToastFramework\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\ToastFramework;..\..\allegro-5.0.8-msvc-11.0\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -109,6 +66,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>allegro-5.0.8-monolith-mt-debug.lib;ToastFramework.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

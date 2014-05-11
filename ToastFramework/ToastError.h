@@ -10,11 +10,15 @@ Copyright (C) 2013 Danny Calleri
 #ifndef TOASTERROR_H
 #define TOASTERROR_H
 
+#ifdef WIN32
 #include <Windows.h>
 #include <Winuser.h>
+#endif
 
 namespace Toast
 {
+
+#ifdef WIN32
 
 // Check if we are in debug build
 #ifdef DEBUG
@@ -23,6 +27,8 @@ namespace Toast
 
 #ifdef _DEBUG
 #define TOAST_DEBUG
+#endif
+
 #endif
 
 #ifdef TOAST_DEBUG

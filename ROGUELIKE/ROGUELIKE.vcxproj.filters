@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Dungeon.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomsManager.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Game.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomsManager.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Dungeon.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Door.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{e287e8a8-fd96-4b25-a6ad-b1e06fe26cd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{ae26ce2e-dc4c-44f9-a412-3f13154f8730}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

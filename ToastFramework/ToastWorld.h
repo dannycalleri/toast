@@ -25,6 +25,11 @@ namespace Toast
 		void render();
 
 		void add(Entity* e);
+
+		// removes Entity from update and rendering
+		// lists and destroys memory
+		void remove(Entity* e);
+		void removeAll();
 		void addGraphic(Graphic* graphic);
 
 		// if the engine should update

@@ -36,6 +36,8 @@ namespace Toast
 
 	Entity::~Entity()
 	{
+		TOAST_SAFE_DELETE(graphic);
+
 		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
 		{
 			std::cout << "[ENTITY destroy] destroying graphic " << i << "\n";

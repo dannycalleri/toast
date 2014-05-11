@@ -25,6 +25,7 @@ namespace Toast
 
 	Font::~Font()
 	{
+		//TOAST_SAFE_DELETE(font);
 		al_destroy_font(this->font);
 	}
 }

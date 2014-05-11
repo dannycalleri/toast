@@ -41,7 +41,7 @@ namespace Toast
 			return;
 		}
 
-		std::cout << "[Canvas::init()] CLEARING CANVAS\n";
+		//std::cout << "[Canvas::init()] CLEARING CANVAS\n";
 		clear(0,0,0);
 	}
 
