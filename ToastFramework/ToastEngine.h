@@ -44,6 +44,15 @@ namespace Toast
 		// makes the window the render target again
 		void resetRenderingBuffer();
 
+		// nearest-neighbour scaling for textures created from now on,
+		// so pixel art stays sharp; call it before loading the art
+		void setPixelArt(bool pixelArt);
+
+		// capped so a stall (window drag, breakpoint)
+		// does not move everything by one huge step
+		static double frameSeconds(Uint64 prevTicksNS, Uint64 ticksNS);
+		static const double MAX_FRAME_SECONDS;
+
 	protected:
 		bool fullscreen;
 		bool paused;

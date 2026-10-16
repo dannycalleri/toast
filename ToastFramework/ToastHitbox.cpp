@@ -10,7 +10,6 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastHitbox.h"
 #include "ToastEntity.h"
 
-#include <iostream>
 #include <functional>
 
 namespace Toast
@@ -66,7 +65,6 @@ namespace Toast
 
 	bool Hitbox::collideMask(Mask* other)
 	{
-		std::cout << "[HITBOX] collideMask" << "\n";
 		return false;
 		/*return parent->x + x + width > other->parent->x - other->parent->originX
 				&& parent->y + y + height > other->parent->y - other->parent->originY
@@ -76,7 +74,6 @@ namespace Toast
 	
 	bool Hitbox::collideHitbox(Hitbox* other)
 	{
-		std::cout << "[HITBOX] collideHitbox" << "\n";
 		return false;
 		/*return parent->x + x + width > other->parent->x + other->x
 				&& parent->y + y + height > other->parent->y + other->y

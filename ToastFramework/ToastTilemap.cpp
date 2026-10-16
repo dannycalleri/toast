@@ -11,60 +11,123 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastGraphics.h"
 #include "ToastTexture.h"
 
-#include <iostream>
+#include <algorithm>
 #include <cmath>
-#include <vector>
 #include <sstream>
 
 namespace Toast
 {
-	Tilemap::Tilemap(const std::string& fileName, unsigned int width, unsigned int height, unsigned int tileWidth, unsigned int tileHeight) :
-		Canvas(width,height,true)
+	Tilemap::Tilemap(const std::string& fileName, unsigned int width, unsigned int height, unsigned int tileWidth, unsigned int tileHeight)
 	{
 		this->tileset = Graphics::LoadTexture(fileName);
 		this->width = width;
 		this->height = height;
+		this->tileWidth = tileWidth;
+		this->tileHeight = tileHeight;
 		this->columns = std::ceil( float(width) / tileWidth );
 		this->rows = std::ceil( float(height) / tileHeight );
-		this->tile = new Rectangle(0, 0, tileWidth, tileHeight);
 
-		//std::cout << "TILEMAP COLS: " << this->columns << " ROWS: " << this->rows << "\n";
+		this->setColumns = 0;
+		this->setCount = 0;
+		if(tileset)
+		{
+			this->setColumns = std::ceil( float(tileset->getWidth()) / tileWidth );
+			unsigned int setRows = std::ceil( float(tileset->getHeight()) / tileHeight );
+			this->setCount = setColumns * setRows;
+		}
 
-		this->setColumns = std::ceil( float(tileset->getWidth()) / tile->width );
-		this->setRows = std::ceil( float( tileset->getHeight()) / tile->height );
-		this->setCount = setColumns * setRows;
+		this->tiles.assign(columns * rows, EMPTY);
+	}
 
-		this->point = new Point(0.0f, 0.0f);
+	Tilemap::Tilemap(const Tilemap& rhs) :
+		Graphic()
+	{
+		active = rhs.active;
+		visible = rhs.visible;
+		x = rhs.x;
+		y = rhs.y;
+		width = rhs.width;
+		height = rhs.height;
+		alpha = rhs.alpha;
+		scrollX = rhs.scrollX;
+		scrollY = rhs.scrollY;
+		relative = rhs.relative;
+		flipped = rhs.flipped;
+		*point = *rhs.point;
 
-		//std::cout << "TILESET COLS: " << this->setColumns << " ROWS: " << this->setRows << "\n";
-		//std::cout << "TILESET COUNT: " << this->setCount << "\n";
+		columns = rhs.columns;
+		rows = rhs.rows;
+		tileWidth = rhs.tileWidth;
+		tileHeight = rhs.tileHeight;
+		tileset = rhs.tileset;
+		setColumns = rhs.setColumns;
+		setCount = rhs.setCount;
+		tiles = rhs.tiles;
 	}
 
 	Tilemap::~Tilemap()
 	{
-		delete this->tile;
-		delete this->point;
 	}
 
 	void Tilemap::setTile(unsigned int column, unsigned int row, unsigned int index)
 	{
-		// make sure that index, column and row are inside
-		// the bounds
+		if(setCount == 0)
+			return;
+
+		// out-of-range values wrap around, as they always have:
+		// ROGUELIKE relies on it for walls at column -1
 		index %= setCount;
 		column %= columns;
 		row %= rows;
 
-		// retrieving the right tile in the tileset
-		tile->x = (index % setColumns) * tile->width;
-		tile->y = (index / setColumns) * tile->height;
+		tiles[row * columns + column] = index;
+	}
 
-		// destination point on the screen buffer
-		point->x = column * tile->width;
-		point->y = row * tile->height;
+	void Tilemap::visibleRange(float offset, float viewSize, unsigned int tileSize, unsigned int count,
+							   unsigned int& first, unsigned int& end)
+	{
+		float firstTile = std::floor(-offset / tileSize);
+		float endTile = std::ceil((viewSize - offset) / tileSize);
 
-		Rectangle rect(tile->x, tile->y, tile->width, tile->height);
-		this->drawTextureRegion(this->tileset, &rect, point->x, point->y, false);
-		//Graphics::DrawRegion(this->tileset, tile->x, tile->y, tile->width, tile->height, point->x, point->y, false);
+		first = (unsigned int)std::min(std::max(firstTile, 0.0f), float(count));
+		end = (unsigned int)std::min(std::max(endTile, 0.0f), float(count));
+		if(end < first)
+			end = first;
+	}
+
+	void Tilemap::render()
+	{
+		if(!tileset)
+			return;
+
+		float renderX = this->x - TF::camera->x * this->scrollX;
+		float renderY = this->y - TF::camera->y * this->scrollY;
+
+		if(relative)
+		{
+			renderX += this->point->x;
+			renderY += this->point->y;
+		}
+
+		unsigned int firstCol, endCol, firstRow, endRow;
+		visibleRange(renderX, float(TF::width), tileWidth, columns, firstCol, endCol);
+		visibleRange(renderY, float(TF::height), tileHeight, rows, firstRow, endRow);
+
+		for(unsigned int row = firstRow; row < endRow; row++)
+		{
+			for(unsigned int col = firstCol; col < endCol; col++)
+			{
+				int index = tiles[row * columns + col];
+				if(index == EMPTY)
+					continue;
+
+				Graphics::DrawRegion(tileset,
+									 float((index % setColumns) * tileWidth), float((index / setColumns) * tileHeight),
+									 float(tileWidth), float(tileHeight),
+									 renderX + col * tileWidth, renderY + row * tileHeight,
+									 alpha, false, 0.0f);
+			}
+		}
 	}
 
 	void Tilemap::loadFromString(const std::string& _str, const std::string& columnSep, const std::string& rowSep)

@@ -16,10 +16,11 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastFont.h"
 #include <algorithm>
 #include <cstdlib>
-#include <iostream>
 
 namespace Toast
 {
+	const double Engine::MAX_FRAME_SECONDS = 0.1;
+
 	Engine::Engine(unsigned int width, unsigned int height, bool fullscreen)
 		: EventManager()
 	{
@@ -87,7 +88,7 @@ namespace Toast
 			checkEvents();
 
 			Uint64 time = SDL_GetTicksNS();
-			TF::elapsed = double(time - prevTime) / SDL_NS_PER_SECOND;
+			TF::elapsed = frameSeconds(prevTime, time);
 			prevTime = time;
 
 			// ====================
@@ -114,6 +115,16 @@ namespace Toast
 
 		if(TF::debug)
 			TF::console->update();
+	}
+
+	double Engine::frameSeconds(Uint64 prevTicksNS, Uint64 ticksNS)
+	{
+		return std::min(double(ticksNS - prevTicksNS) / SDL_NS_PER_SECOND, MAX_FRAME_SECONDS);
+	}
+
+	void Engine::setPixelArt(bool pixelArt)
+	{
+		SDL_SetDefaultTextureScaleMode(renderer, pixelArt ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
 	}
 
 	void Engine::resetRenderingBuffer()
@@ -145,8 +156,6 @@ namespace Toast
 		if(frameUpdateTimer >= 1.0f)
 		{
 			TF::FPS = frameCounter;
-
-			std::cout << "FPS : " << TF::FPS << "\n";
 
 			frameUpdateTimer = 0.0f;
 			frameCounter = 0;
@@ -184,6 +193,10 @@ namespace Toast
 
 		if(!SDL_SetRenderLogicalPresentation(renderer, this->width, this->height, SDL_LOGICAL_PRESENTATION_LETTERBOX))
 			return false;
+
+		// without it the loop renders as fast as the CPU allows;
+		// some drivers refuse it, and the game still runs then
+		SDL_SetRenderVSync(renderer, 1);
 
 		// Init Input
 		for(unsigned int i=0; i < TOAST_KEY_MAX; i++)

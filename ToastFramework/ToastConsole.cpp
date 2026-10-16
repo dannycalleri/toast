@@ -93,8 +93,6 @@ namespace Toast
 		selectionRect->x = Input::mouseX;
 		selectionRect->y = Input::mouseY;
 
-		std::cout << "START SELECTION x: " << selectionRect->x << " START SELECTION y: " << selectionRect->y << "\n";
-
 		selectionRect->width = 0;
 		selectionRect->height = 0;
 	}
@@ -225,7 +223,9 @@ namespace Toast
 
 	void Console::render()
 	{
-		if(enabled && TF::world)
+		// the overlay is only shown while paused, and redrawing
+		// a full-screen canvas every frame for nothing is costly
+		if(enabled && TF::world && canvas->visible)
 		{
 			canvas->clear();
 
@@ -263,8 +263,7 @@ namespace Toast
 			canvas->x = TF::camera->x;
 			canvas->y = TF::camera->y;
 
-			if(canvas->visible)
-				canvas->render();
+			canvas->render();
 		}
 	}
 }

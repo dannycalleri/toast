@@ -46,7 +46,6 @@ namespace Toast
 
 		for(i = anims.begin(); i != anims.end(); i++)
 		{
-			std::cout << "[SPRITEMAP destroy] deleting animation " << i->first << "\n";
 			delete i->second;
 		}
 

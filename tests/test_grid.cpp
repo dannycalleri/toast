@@ -40,3 +40,17 @@ TOAST_TEST(grid_csv_rows_keep_their_last_column)
 	CHECK(!grid.getTile(0, 0));
 	CHECK(grid.getTile(2, 0));
 }
+
+TOAST_TEST(grid_copy_is_independent_of_the_original)
+{
+	Grid original(64, 64, 32, 32);
+	original.setTile(0, 0, true);
+
+	Grid copy(original);
+	copy.setTile(1, 1, true);
+	original.setTile(0, 0, false);
+
+	CHECK(copy.getTile(0, 0));
+	CHECK(copy.getTile(1, 1));
+	CHECK(!original.getTile(1, 1));
+}

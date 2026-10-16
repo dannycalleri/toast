@@ -29,6 +29,16 @@ namespace Toast
 		this->usePositions=false;
 	}
 
+	Grid::Grid(const Grid& rhs) :
+		Hitbox(rhs),
+		columns(rhs.columns),
+		rows(rhs.rows),
+		usePositions(rhs.usePositions),
+		tile(new Rectangle(*rhs.tile)),
+		data(rhs.data)
+	{
+	}
+
 	Grid::~Grid()
 	{
 		delete tile;

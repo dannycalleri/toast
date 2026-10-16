@@ -96,26 +96,6 @@ namespace
 		return texture;
 	}
 
-	// SDL's software renderer stores opaque alpha when blending into a
-	// render target, so translucent canvas content can only be checked on a GPU.
-	// Probed before the Engine starts, because the Engine exits when SDL cannot init.
-	bool gpuRendererAvailable()
-	{
-		SDL_ResetHint(SDL_HINT_VIDEO_DRIVER);
-		SDL_ResetHint(SDL_HINT_RENDER_DRIVER);
-		bool available = false;
-		if(SDL_InitSubSystem(SDL_INIT_VIDEO))
-		{
-			SDL_Window* window = SDL_CreateWindow("probe", 16, 16, SDL_WINDOW_HIDDEN);
-			SDL_Renderer* renderer = window ? SDL_CreateRenderer(window, NULL) : NULL;
-			available = renderer && SDL_strcmp(SDL_GetRendererName(renderer), SDL_SOFTWARE_RENDERER) != 0;
-			SDL_DestroyRenderer(renderer);
-			SDL_DestroyWindow(window);
-		}
-		SDL_Quit();
-		return available;
-	}
-
 	SDL_Color drawHalfRedCanvasOverGrey(float canvasAlpha)
 	{
 		Canvas* canvas = new Canvas(16, 16);
@@ -233,4 +213,11 @@ TOAST_TEST(engine_key_pressed_once_down_until_released)
 	CHECK(!Input::down(TOAST_KEY_A));
 
 	delete engine;
+}
+
+TOAST_TEST(engine_frame_time_is_capped)
+{
+	const Uint64 ms = SDL_NS_PER_MS;
+	CHECK(SDL_fabs(Engine::frameSeconds(1000 * ms, 1016 * ms) - 0.016) < 1e-9);
+	CHECK(Engine::frameSeconds(0, 5000 * ms) == Engine::MAX_FRAME_SECONDS);
 }

@@ -16,7 +16,6 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastGrid.h"
 #include "ToastTilemap.h"
 
-#include <iostream>
 #include <algorithm>
 #include <functional>
 #include <random>
@@ -78,7 +77,8 @@ namespace Toast
 		// load rooms content
 		loadRooms();
 
-		std::cout << "[DUNGEON] generated " << size << " rooms dungeon\n";
+		if(TF::debug)
+			SDL_Log("[DUNGEON] generated %d rooms dungeon", size);
 	}
 
 	void Dungeon::createRooms(unsigned int size)
@@ -356,21 +356,7 @@ namespace Toast
 			r->distance = TF::distance(startRoom->x, startRoom->y, r->x, r->y);
 		}
 
-		/*std::cout << "[DUNGEON] DISTANCE BEFORE ###" << "\n";
-		for(unsigned int i = 0; i < rooms.size(); i++)
-		{
-			Room* r = rooms[i];
-			std::cout << "[DUNGEON] ROOM DISTANCE = " << r->distance << "\n";
-		}*/
-
 		std::sort(rooms.begin(), rooms.end(), distanceCompare);
-
-		std::cout << "\n[DUNGEON] DISTANCE AFTER SORTING ### " << "\n";
-		for(unsigned int i = 0; i < rooms.size(); i++)
-		{
-			Room* r = rooms[i];
-			std::cout << "[DUNGEON] ROOM DISTANCE = " << r->distance << "\n";
-		}
 	}
 
 	bool Dungeon::distanceCompare(const Room* a, const Room* b)

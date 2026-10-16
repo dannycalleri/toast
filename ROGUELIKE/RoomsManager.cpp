@@ -12,7 +12,6 @@ Copyright (C) 2013 Danny Calleri
 #include "Door.h"
 #include "GameWorld.h"
 #include "TF.h"
-#include <iostream>
 
 namespace Toast
 {
@@ -26,8 +25,6 @@ namespace Toast
 		rRooms.clear();
 		startRoom = 0;
 		bossRoom = 0;
-
-		std::cout << "[ROOMS MANAGER] created - world = " << world << "\n";
 
 		populate();
 	}
@@ -152,8 +149,6 @@ namespace Toast
 
 	void RoomsManager::populate()
 	{
-		std::cout << "[ROOMS MANAGER] populate() \n";
-
 		loadLevel();
 
 		startRoom = new Room("rooms/start.oel", world);

@@ -6,6 +6,10 @@
 #include "GameWorld.h"
 #include "Room.h"
 #include "RoomsManager.h"
+#include "ToastTilemap.h"
+
+#include <cstdio>
+#include <fstream>
 
 using namespace Toast;
 
@@ -83,6 +87,29 @@ TOAST_TEST(roguelike_dungeons_generate_without_overlapping_rooms)
 		for(Room* room : world->dungeon->rooms)
 			CHECK(!room->isOverlapping());
 	}
+
+	delete engine;
+}
+
+TOAST_TEST(roguelike_room_copies_do_not_reread_the_room_file)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+
+	std::string path = TF::resolvePath("rooms/copy-test.oel");
+	{
+		std::ifstream in(TF::resolvePath("rooms/room_ud.oel").c_str(), std::ios::binary);
+		std::ofstream out(path.c_str(), std::ios::binary);
+		out << in.rdbuf();
+	}
+	Room original("rooms/copy-test.oel", world);
+	std::remove(path.c_str());
+
+	Room copy(original);
+	CHECK(copy.tilemap != NULL && copy.tilemap != original.tilemap);
+	CHECK(copy.doors.size() == original.doors.size());
+	CHECK(copy.box->x == original.box->x && copy.box->width == original.box->width);
+	CHECK(copy.hasDoor(UP) && copy.hasDoor(DOWN));
 
 	delete engine;
 }

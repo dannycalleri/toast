@@ -56,9 +56,10 @@ namespace Toast
 	{
 		this->filename = rhs.filename;
 		this->world = rhs.world;
-		tilemap = 0;
-		doorsGrid = 0;
-		collisionGrid = 0;
+		// the dungeon copies rooms by the hundred while it tries to place them
+		tilemap = rhs.tilemap ? new Tilemap(*rhs.tilemap) : 0;
+		doorsGrid = rhs.doorsGrid ? new Grid(*rhs.doorsGrid) : 0;
+		collisionGrid = rhs.collisionGrid ? new Grid(*rhs.collisionGrid) : 0;
 		rowStart = 0;
 		rowEnd = 0;
 		colStart = 0;
@@ -70,7 +71,6 @@ namespace Toast
 
 		doors.clear();
 
-		loadMap();
 		calculateBoundingBox();
 		locateDoors();
 

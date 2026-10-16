@@ -40,7 +40,6 @@ namespace Toast
 
 		for(std::vector<Graphic*>::size_type i = 0; i < graphicsList.size(); i++)
 		{
-			std::cout << "[ENTITY destroy] destroying graphic " << i << "\n";
 			delete graphicsList[i];
 		}
 	}

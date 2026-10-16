@@ -12,6 +12,7 @@ namespace Toast
 	{
 	public:
 		Grid(int width, int height, int tileWidth, int tileHeight, float x = 0.0f, float y = 0.0f);
+		Grid(const Grid& rhs);
 		virtual ~Grid();
 
 		void setTile(int column = 0, int row = 0, bool solid = false);
@@ -27,6 +28,9 @@ namespace Toast
 		int columns;
 		int rows;
 		bool usePositions;
+
+	private:
+		Grid& operator=(const Grid&);
 
 	protected:
 		Rectangle* tile;
