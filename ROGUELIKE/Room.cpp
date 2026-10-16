@@ -8,10 +8,14 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "Room.h"
-#include <rapidxml-1.13\rapidxml.hpp>
+#include "rapidxml.hpp"
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <string>
-#include <iostream>
+#include <vector>
+#include "TF.h"
 #include "ToastGrid.h"
 #include "ToastTilemap.h"
 #include "Game.h"
@@ -22,7 +26,7 @@ using namespace rapidxml;
 
 namespace Toast
 {
-	Room::Room(char* filename, GameWorld* gameWorld) :
+	Room::Room(const std::string& filename, GameWorld* gameWorld) :
 		Entity()
 	{
 		this->filename = filename;
@@ -51,10 +55,6 @@ namespace Toast
 	Room::Room(const Room& rhs)
 	{
 		this->filename = rhs.filename;
-		//int filenameLength = strlen(rhs.filename);
-		//this->filename = new char[filenameLength];
-		//this->filename = "";
-		//stringCopy(this->filename, rhs.filename);
 		this->world = rhs.world;
 		tilemap = 0;
 		doorsGrid = 0;
@@ -95,21 +95,6 @@ namespace Toast
 			delete doors[i];
 		}
 		doors.clear();
-	}
-
-	void Room::stringCopy(char* dest, char* src)
-	{
-		// while pointer does not equal null char, copy contents
-		while( *src != '\0' )
-		{
-			*dest = *src;
-			src++;
-			dest++;
-		}
-
-		// null terminating dest
-		dest++;
-		*dest = '\0';
 	}
 
 	bool Room::overlapBoxVSBox(Rectangle* other, float otherX, float otherY)
@@ -171,8 +156,10 @@ namespace Toast
 
 	void Room::locateDoors()
 	{
+		if(!doorsGrid)
+			return;
+
 		bool doorFound = false;
-		int leftDoorsCount = 0;
 		
 		// find left edge doors
 		for(int row = rowStart; row <= rowEnd; row++)
@@ -194,14 +181,8 @@ namespace Toast
 				if(doorFound)
 				{
 					doorFound = false;
-					leftDoorsCount++;
 				}
 			}
-		}
-
-		if(doorFound)
-		{
-			leftDoorsCount++;
 		}
 
 		doorFound=false;
@@ -285,7 +266,8 @@ namespace Toast
 	{
 		bool startFound=false;
 
-		for(int row = 0; row < collisionGrid->rows; row++)
+		// a room whose file failed to load keeps an empty box
+		for(int row = 0; collisionGrid && row < collisionGrid->rows; row++)
 		{
 			for(int col = 0; col < collisionGrid->columns; col++)
 			{
@@ -325,37 +307,41 @@ namespace Toast
 
 	void Room::loadMap()
 	{
-		std::ifstream mapFile;
-		mapFile.open(filename);
+		std::ifstream mapFile(TF::resolvePath(filename).c_str(), std::ios::binary);
 
 		if(mapFile.fail())
 		{
-			TOAST_ERROR("[ROOM] failed to open room file");
+			TOAST_ERROR(("[ROOM] failed to open room file " + filename).c_str());
 			return;
 		}
 
-		std::string mapString = "";
-		mapFile.seekg(0, std::ios::end);   
-		mapString.reserve(mapFile.tellg());
-		mapFile.seekg(0, std::ios::beg);
-
-		mapString.assign((std::istreambuf_iterator<char>(mapFile)),
-					std::istreambuf_iterator<char>());
-
-		//std::cout << "[XML MAP]: \n" << mapString << "\n";
-
-		// closing file stream
-		mapFile.close();
+		// rapidxml parses in place and needs a writable, null-terminated buffer
+		std::vector<char> mapText((std::istreambuf_iterator<char>(mapFile)),
+								  std::istreambuf_iterator<char>());
+		mapText.push_back('\0');
 
 		xml_document<> map;
-		map.parse<0>((char*)mapString.c_str());
+		try
+		{
+			map.parse<0>(&mapText[0]);
+		}
+		catch(const parse_error& e)
+		{
+			TOAST_ERROR(("[ROOM] " + filename + ": " + e.what()).c_str());
+			return;
+		}
 
-		xml_attribute<>* mapWidth = map.first_node()->first_attribute();
-		xml_attribute<>* mapHeight = mapWidth->next_attribute();
-		xml_node<>* doorsNode = map.first_node()->first_node("Doors");
-		xml_node<>* tilesNode = map.first_node()->first_node("Tiles");
-		xml_node<>* collisionsNode = map.first_node()->first_node("Collisions");
-		//std::cout << "Doors = " << doorsNode->value() << "\n";
+		xml_node<>* level = map.first_node();
+		xml_attribute<>* mapWidth = level ? level->first_attribute("width") : NULL;
+		xml_attribute<>* mapHeight = level ? level->first_attribute("height") : NULL;
+		xml_node<>* doorsNode = level ? level->first_node("Doors") : NULL;
+		xml_node<>* tilesNode = level ? level->first_node("Tiles") : NULL;
+		xml_node<>* collisionsNode = level ? level->first_node("Collisions") : NULL;
+		if(!mapWidth || !mapHeight || !doorsNode || !tilesNode || !collisionsNode)
+		{
+			TOAST_ERROR(("[ROOM] " + filename + " is missing width, height, Doors, Tiles or Collisions").c_str());
+			return;
+		}
 
 		doorsGrid = new Grid(atoi(mapWidth->value()), atoi(mapHeight->value()), 32, 32);
 		doorsGrid->loadFromString(doorsNode->value(), "", "\n");

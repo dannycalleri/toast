@@ -97,6 +97,24 @@ target_link_libraries(demo PRIVATE toast)
 toast_warnings(demo)
 toast_copy_assets(demo ${DEMO_ASSETS})
 
+set(ROGUELIKE_ASSETS
+    ${CMAKE_SOURCE_DIR}/ROGUELIKE/04B_03__.TTF
+    ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets
+    ${CMAKE_SOURCE_DIR}/ROGUELIKE/rooms)
+
+# everything but main(), so the tests can drive the dungeon generator
+add_library(roguelike_game STATIC
+    ROGUELIKE/Dungeon.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp
+    ROGUELIKE/Room.cpp ROGUELIKE/RoomsManager.cpp)
+target_include_directories(roguelike_game PUBLIC ROGUELIKE)
+target_link_libraries(roguelike_game PUBLIC toast)
+toast_warnings(roguelike_game)
+
+add_executable(roguelike ROGUELIKE/main.cpp)
+target_link_libraries(roguelike PRIVATE roguelike_game)
+toast_warnings(roguelike)
+toast_copy_assets(roguelike ${ROGUELIKE_ASSETS})
+
 # --- tests -------------------------------------------------------------------
 
 if(TOAST_BUILD_TESTS)

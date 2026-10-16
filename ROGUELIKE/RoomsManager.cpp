@@ -104,6 +104,14 @@ namespace Toast
 	{
 		Room* room = NULL;
 		int ran = 0;
+
+		// copying from an empty set would index past its end
+		// (it is empty when the room files failed to load)
+		std::vector<Room*>* set = type == DoorType::UP ? &uRooms
+								: type == DoorType::DOWN ? &dRooms
+								: type == DoorType::LEFT ? &lRooms : &rRooms;
+		if(set->empty())
+			return NULL;
 			
 		switch(type)
 		{

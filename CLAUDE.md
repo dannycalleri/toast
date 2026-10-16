@@ -8,8 +8,8 @@ Toast Framework: a 2D C++17 game framework modeled on FlashPunk (AS3), built on 
 
 - `ToastFramework/` — the framework, built as the static library `toast`.
 - `DEMO/` — minimal sample game; the intended template for new games.
-- `ROGUELIKE/` — larger sample with procedural dungeon generation (`Dungeon`, `RoomsManager`, `Room`), rooms authored as Ogmo Editor files in `ROGUELIKE/rooms/` (`.oep`/`.oel`). Not yet in the CMake build.
-- `tests/` — a tiny self-contained test runner (`ToastTest.h`) and the `toast_tests` executable.
+- `ROGUELIKE/` — larger sample with procedural dungeon generation (`Dungeon`, `RoomsManager`, `Room`), rooms authored as Ogmo Editor files in `ROGUELIKE/rooms/` (`.oep`/`.oel`, parsed with rapidxml; collision and door layers are bitstrings read by `Grid::loadFromString` with an empty column separator). It builds as the `roguelike_game` library (everything but `main.cpp`, so tests can link it) plus the `roguelike` executable.
+- `tests/` — a tiny self-contained test runner (`ToastTest.h`) with two executables: `toast_tests` (framework) and `roguelike_tests` (room loading, dungeon generation).
 
 ## Building and testing
 
@@ -19,12 +19,12 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure        # all tests
 ctest --test-dir build -R input_keymap            # one test (or: build/tests/toast_tests input_keymap)
-./build/demo
+./build/demo                                       # or ./build/roguelike (G generates a dungeon)
 ```
 
 - Sanitizers: `-DTOAST_SANITIZERS=undefined` (or `address,undefined`). On this macOS 26 / Apple clang 17 machine ASan hangs at process start even for an empty `main`, so use UBSan only here.
 - New framework `.cpp` files are picked up automatically (`file(GLOB ... CONFIGURE_DEPENDS)`); new test files and test names must be added to `tests/CMakeLists.txt` (each test is registered with CTest by name).
-- Engine tests run headless on SDL's `dummy` video driver with the `software` renderer (see `startEngine` in `tests/test_engine.cpp`), and can read pixels back with `SDL_RenderReadPixels`.
+- Engine tests run headless: call `useHeadlessVideo()` (`tests/HeadlessVideo.h`) before creating the `Engine` to get SDL's `dummy` video driver and `software` renderer; pixels can be read back with `SDL_RenderReadPixels`. The software renderer ignores alpha when blending into render targets, so tests of translucent canvas content probe for a GPU renderer and `SKIP` without one (exit 77, reported by ctest as "Not Run").
 - Game assets are listed per target in `CMakeLists.txt` and copied next to the executable by `toast_copy_assets`; a new asset must be added there.
 
 ## Architecture

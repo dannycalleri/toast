@@ -3,6 +3,7 @@
 
 #include "ToastCommon.h"
 #include "ToastHitbox.h"
+#include <string>
 #include <vector>
 
 namespace Toast

@@ -19,6 +19,7 @@ Copyright (C) 2013 Danny Calleri
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <random>
 
 namespace Toast
 {
@@ -108,7 +109,6 @@ namespace Toast
 		bool roomAdded = false;
 		Room* currentRoom = 0;
 		unsigned int count = 0;
-		unsigned int index = 0;
 
 		while(rooms.size() < size - 1)
 		{
@@ -132,7 +132,9 @@ namespace Toast
 				roomAdded = false;
 
 				// randomly sort rooms vector
-				std::random_shuffle(currentRoom->doors.begin(), currentRoom->doors.end());
+				// seeded from TFRandom so one seed reproduces the whole dungeon
+				std::mt19937 shuffleRng(unsigned(TF::random() * 4294967295.0));
+				std::shuffle(currentRoom->doors.begin(), currentRoom->doors.end(), shuffleRng);
 
 				for(unsigned int i=0; i < currentRoom->doors.size(); i++)
 				{
@@ -385,11 +387,17 @@ namespace Toast
 		bool added = false;
 
 		Room* r = 0;
+		Door* downDoor = bossRoom->getDoor(DoorType::DOWN);
+		if(!downDoor)
+		{
+			TOAST_ERROR("[DUNGEON] the boss room has no DOWN door");
+			delete bossRoom;
+			return;
+		}
+
 		for(unsigned int i=0; i < rooms.size(); i++)
 		{
 			r = rooms[i];
-			
-			Door* downDoor = bossRoom->getDoor(DoorType::DOWN);
 				
 			float offsetX = 0.0f;
 			int numCols = r->roomWidth / Game::TILESIZE;

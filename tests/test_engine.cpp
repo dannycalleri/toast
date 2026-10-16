@@ -1,7 +1,5 @@
-// Runs the real Engine on SDL's dummy video driver with the software renderer,
-// so most of these tests need no display.
-
 #include "ToastTest.h"
+#include "HeadlessVideo.h"
 #include "Toast.h"
 #include "ToastCanvas.h"
 #include "ToastFont.h"
@@ -24,8 +22,7 @@ namespace
 		}
 		else
 		{
-			SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE);
-			SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, "software", SDL_HINT_OVERRIDE);
+			useHeadlessVideo();
 		}
 		Engine* engine = new Engine(width, height);
 		TF::world = new World();
