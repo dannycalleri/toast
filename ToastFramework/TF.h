@@ -58,6 +58,11 @@ namespace Toast
 		static void addTexture(std::string str, Texture* tex);
 
 		static void destroyAllTextures();
+
+		// turns a path relative to the executable's directory
+		// (or the app bundle's Resources directory) into a full path,
+		// so assets load whatever the working directory is
+		static std::string resolvePath(const std::string& path);
 		static void setCamera(float x = 0, float y = 0);
 		static void resetCamera();
 		static float distance(float x1, float y1, float x2, float y2);

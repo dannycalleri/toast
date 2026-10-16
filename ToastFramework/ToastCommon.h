@@ -7,6 +7,9 @@ Copyright (C) 2013 Danny Calleri
 ==========================================================================
 */
 
+#ifndef TOASTCOMMON_H
+#define TOASTCOMMON_H
+
 /*
 *	All the common includes	
 *	and classes declaration for the engine.
@@ -14,21 +17,15 @@ Copyright (C) 2013 Danny Calleri
 *	Danny
 */
 
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_native_dialog.h>
-#include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_font.h>
-#include <allegro5/allegro_ttf.h>
-
-#ifdef WIN32
-#include <allegro5/allegro_direct3d.h>
-#endif
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 #include "ToastTypes.h"
 #include "ToastError.h"
 #include "ToastKeycodes.h"
 
-#define TOAST_SAFE_DELETE(x) if(x != NULL) delete x; x = NULL;
+#define TOAST_SAFE_DELETE(x) do { delete (x); (x) = NULL; } while(0)
 
 namespace Toast
 {
@@ -51,3 +48,5 @@ namespace Toast
 	class Mask;
 	class Grid;
 }
+
+#endif // TOASTCOMMON_H

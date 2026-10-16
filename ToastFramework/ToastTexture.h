@@ -27,8 +27,7 @@ namespace Toast
 
 	public:
 
-		// Allegro representation of the texture
-		ALLEGRO_BITMAP* tex;
+		SDL_Texture* tex;
 
 		//qqq
 		bool flipped;

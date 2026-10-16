@@ -10,39 +10,15 @@ Copyright (C) 2013 Danny Calleri
 #ifndef TOASTERROR_H
 #define TOASTERROR_H
 
-#ifdef WIN32
-#include <Windows.h>
-#include <Winuser.h>
-#endif
-
 namespace Toast
 {
+	void reportError(const char* msg);
 
-#ifdef WIN32
-
-// Check if we are in debug build
-#ifdef DEBUG
-#define TOAST_DEBUG
-#endif
-
-#ifdef _DEBUG
-#define TOAST_DEBUG
-#endif
-
-#endif
-
-#ifdef TOAST_DEBUG
-	#define TOAST_ERROR(msg) \
-	do \
-	{ \
-		MessageBox(0, msg, "Toast Error", MB_OK | MB_ICONSTOP | MB_TASKMODAL); \
-		{__asm {int 3}} \
-	} \
-	while(0); 
-#else
-	#define TOAST_ERROR(msg) {}
-#endif
-
+	// logs the error and shows it in a message box,
+	// for failures the game cannot continue after
+	void fatalError(const char* msg);
 }
+
+#define TOAST_ERROR(msg) ::Toast::reportError(msg)
 
 #endif // TOASTERROR_H

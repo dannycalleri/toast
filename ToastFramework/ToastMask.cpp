@@ -44,6 +44,8 @@ namespace Toast
 
 				break;
 			}
+		default:
+			break;
 		}
 		
 		if(!typeFound && !isColliding)

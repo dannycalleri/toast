@@ -15,7 +15,7 @@ Copyright (C) 2013 Danny Calleri
 
 namespace Toast
 {
-	Hitbox::Hitbox(int width = 1, int height = 1, float x = 0.0f, float y = 0.0f):
+	Hitbox::Hitbox(int width, int height, float x, float y):
 		Mask()
 	{
 		this->width = width;

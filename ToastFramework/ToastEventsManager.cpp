@@ -10,13 +10,10 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastEventsManager.h"
 #include "ToastInput.h"
 
-#include <iostream>
-
 namespace Toast
 {
 	EventManager::EventManager()
 	{
-		this->event_queue=0;
 	}
 
 	EventManager::~EventManager()
@@ -33,48 +30,61 @@ namespace Toast
 		}
 
 		//If any events happen, process all of them this frame.
-		while(!al_is_event_queue_empty(event_queue))
-		{	
-			ALLEGRO_EVENT ev;
-
-			al_wait_for_event(event_queue, &ev);
-
-			if(ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) 
+		SDL_Event ev;
+		while(SDL_PollEvent(&ev))
+		{
+			if(ev.type == SDL_EVENT_QUIT || ev.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) 
 			{
 				this->onExit();
 			}
-			else if(ev.type == ALLEGRO_EVENT_MOUSE_AXES ||
-				ev.type == ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY)
+			else if(ev.type == SDL_EVENT_MOUSE_MOTION)
 			{
-				Input::mouseWindowX = ev.mouse.x;
-				Input::mouseWindowY = ev.mouse.y;
+				Input::mouseWindowX = int(ev.motion.x);
+				Input::mouseWindowY = int(ev.motion.y);
 
-				Input::mouseX = Input::mouseWindowX * Input::mouseScale;
-				Input::mouseY = (Input::mouseWindowY * Input::mouseScale) - (Input::offsetY * Input::mouseScale);
+				SDL_Renderer* renderer = SDL_GetRenderer(SDL_GetWindowFromEvent(&ev));
+				if(renderer)
+					SDL_ConvertEventToRenderCoordinates(renderer, &ev);
 
+				Input::mouseX = int(ev.motion.x);
+				Input::mouseY = int(ev.motion.y);
 			}
-			else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)
+			else if(ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
 			{
-				if(ev.mouse.button == 1)
+				if(ev.button.button == SDL_BUTTON_LEFT)
 				{
 					Input::leftMousePressed=true;
 					Input::leftMouseDown=true;
 					Input::mouseReleased=false;
 				}
 			}
-			else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP)
+			else if(ev.type == SDL_EVENT_MOUSE_BUTTON_UP)
 			{
-				Input::leftMouseDown=false;
-				Input::mouseReleased=true;
+				if(ev.button.button == SDL_BUTTON_LEFT)
+				{
+					Input::leftMouseDown=false;
+					Input::mouseReleased=true;
+				}
 			}
-			else if(ev.type == ALLEGRO_EVENT_KEY_DOWN)
+			else if(ev.type == SDL_EVENT_KEY_DOWN)
 			{
-				Input::pressedKeys[ev.keyboard.keycode] = true;
-				Input::downKeys[ev.keyboard.keycode] = true;
+				// key repeat would make pressed() fire
+				// again while the key is held
+				if(ev.key.repeat)
+					continue;
+
+				unsigned int key = Input::keyFromScancode(ev.key.scancode);
+				if(key)
+				{
+					Input::pressedKeys[key] = true;
+					Input::downKeys[key] = true;
+				}
 			}
-			else if(ev.type == ALLEGRO_EVENT_KEY_UP)
+			else if(ev.type == SDL_EVENT_KEY_UP)
 			{
-				Input::downKeys[ev.keyboard.keycode] = false;
+				unsigned int key = Input::keyFromScancode(ev.key.scancode);
+				if(key)
+					Input::downKeys[key] = false;
 			}
 		}
 	}

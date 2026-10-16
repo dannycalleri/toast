@@ -20,14 +20,15 @@ namespace Toast
 	{
 	public:
 		/**
-		*	If you decide to go fullscreen, the width and height parameters
-		*	will be ignored at the moment and you'll go fullscreen at your
-		*	native resolution
+		*	width and height are the game's logical resolution.
+		*	The window is scaled to fit the screen and the game
+		*	is letterboxed inside it, in windowed and fullscreen mode
 		*/
 		Engine(unsigned int width, unsigned int height, bool fullscreen=false);
 		virtual ~Engine();
 
-		ALLEGRO_DISPLAY* display;
+		SDL_Window*   window;
+		SDL_Renderer* renderer;
 		TFRandom*	  random;
 
 		// run the engine main loop
@@ -35,14 +36,12 @@ namespace Toast
 
 		void update();
 		void render();
-		void cleanUp();
 
 		// Overriden event handlers
 		virtual void checkEvents();
 		virtual void onExit();
 
-		// reset rendering buffer to the
-		// the engine's rendering buffer
+		// makes the window the render target again
 		void resetRenderingBuffer();
 
 	protected:
@@ -52,16 +51,9 @@ namespace Toast
 		unsigned int width;
 		unsigned int height;
 
-		ALLEGRO_BITMAP* buffer; // screen buffer for rendering
-		float scaleW;
-		float scaleH;
-		float scaleX;
-		float scaleY;
-
 		// =====================
 		// TIMING STUFF
-		double prevTime;
-		double time;
+		Uint64 prevTime;
 
 		// FPS update
 		float frameUpdateTimer;

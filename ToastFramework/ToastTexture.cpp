@@ -21,7 +21,8 @@ namespace Toast
 
 	Texture::~Texture()
 	{
-		al_destroy_bitmap(tex);
+		if(tex)
+			SDL_DestroyTexture(tex);
 	}
 
 }

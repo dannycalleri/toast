@@ -25,10 +25,7 @@ Copyright (C) 2013 Danny Calleri
 #define CMATH_TEMPERING_SHIFT_T(y)  (y << 15)
 #define CMATH_TEMPERING_SHIFT_L(y)  (y >> 18)
 
-#define RADIANS_TO_DEGREES(x) ((x) * 180.0f / GCC_PI)
-#define DEGREES_TO_RADIANS(x) ((x) * GCC_PI / 180.0f)
-
-#define INT_MAX 2147483647
+#include <climits>
 
 namespace Toast
 {

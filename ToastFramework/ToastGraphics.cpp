@@ -14,11 +14,30 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastCanvas.h"
 #include "ToastFont.h"
 
-// debug
-#include <iostream>
-
 namespace Toast
 {
+	namespace
+	{
+		const float RADIANS_TO_DEGREES = 180.0f / SDL_PI_F;
+
+		// Toast angles are radians around the top-left
+		// corner, like Allegro's; SDL wants degrees
+		void renderTexture(SDL_Texture* tex, const SDL_FRect* src, const SDL_FRect* dst, bool flipped, float angle)
+		{
+			SDL_Renderer* renderer = TF::engine->renderer;
+			if(angle == 0.0f && !flipped)
+			{
+				SDL_RenderTexture(renderer, tex, src, dst);
+			}
+			else
+			{
+				SDL_FPoint pivot = {0.0f, 0.0f};
+				SDL_RenderTextureRotated(renderer, tex, src, dst, angle * RADIANS_TO_DEGREES, &pivot,
+										 flipped ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
+			}
+		}
+	}
+
 	Graphics::Graphics()
 	{
 	}
@@ -29,37 +48,36 @@ namespace Toast
 
 	void Graphics::Clear(byte r, byte g, byte b, byte a)
 	{
-		// clearing window with a new color
-		al_clear_to_color(al_map_rgba(r, g, b,a));
+		SDL_Renderer* renderer = TF::engine->renderer;
+		SDL_SetRenderDrawColor(renderer, r, g, b, a);
+		SDL_RenderClear(renderer);
 	}
 
 	void Graphics::Present()
 	{
-		// present buffer
-		al_flip_display();
+		SDL_RenderPresent(TF::engine->renderer);
 	}
 
 	Texture* Graphics::LoadTexture(const std::string& fileName)
 	{
 		Texture* texture = TF::getTexture(fileName);
 
-		//std::cout << "[TEXTURE] Loading texture \" " << fileName << "\" \n";
-
 		if(!texture)
 		{
-			std::cout << "[TEXTURE] Creating NEW texture for \" " << fileName << "\" \n";
-
-			texture = new Texture();
-			texture->tex = al_load_bitmap(fileName.c_str());
-
-			if(!texture->tex)
+			SDL_Texture* tex = IMG_LoadTexture(TF::engine->renderer, TF::resolvePath(fileName).c_str());
+			if(!tex)
 			{
-				TOAST_ERROR("[TEXTURE] ERROR loading allegro texture");
+				TOAST_ERROR(SDL_GetError());
 				return NULL;
 			}
 
-			texture->setWidth(al_get_bitmap_width(texture->tex));
-			texture->setHeight(al_get_bitmap_height(texture->tex));
+			texture = new Texture();
+			texture->tex = tex;
+
+			float w, h;
+			SDL_GetTextureSize(tex, &w, &h);
+			texture->setWidth(uint32(w));
+			texture->setHeight(uint32(h));
 
 			// inserting texture in the map
 			// for managing resources
@@ -73,18 +91,14 @@ namespace Toast
 	{
 		if(!source)
 		{
-			al_show_native_message_box(TF::engine->display, "Error", "Error", "[TEXTURE DRAW] The texture is NULL!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			TOAST_ERROR("[TEXTURE DRAW] The texture is NULL!");
 			return;
 		}
 
-		if(angle == 0.0f) {
-			if(!flipped) al_draw_bitmap(source->tex, destX, destY, 0);
-			else al_draw_bitmap(source->tex, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
-		} else {
-			if(!flipped) al_draw_rotated_bitmap(source->tex, 0.0f, 0.0f, destX, destY, angle, 0);
-			else al_draw_rotated_bitmap(source->tex, 0.0f, 0.0f, destX, destY, angle, ALLEGRO_FLIP_HORIZONTAL);
-		}
+		// textures are shared, so the alpha left by the last DrawRegion must be reset
+		SDL_SetTextureAlphaModFloat(source->tex, 1.0f);
+		SDL_FRect dst = {destX, destY, float(source->getWidth()), float(source->getHeight())};
+		renderTexture(source->tex, NULL, &dst, flipped, angle);
 	}
 
 	void Graphics::DrawRegion(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, 
@@ -92,68 +106,59 @@ namespace Toast
 	{
 		if(!source)
 		{
-			al_show_native_message_box(TF::engine->display, "Error", "Error", "[TEXTURE DRAW] The texture is NULL!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			TOAST_ERROR("[TEXTURE DRAW] The texture is NULL!");
 			return;
 		}
 
-		if(angle == 0.0f) 
-		{
-			if(!flipped)
-			{
-				al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
-											 srcX, srcY, srcWidth, srcHeight, destX, destY, 0);
-			}
-			else
-			{
-				al_draw_tinted_bitmap_region(source->tex, al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha), 
-											 srcX, srcY, srcWidth, srcHeight, destX, destY, ALLEGRO_FLIP_HORIZONTAL);
-			}
-		}
-		else
-		{
-			if(!flipped)
-			{
-				al_draw_tinted_scaled_rotated_bitmap_region(source->tex, srcX, srcY, srcWidth, srcHeight, 
-															al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha),
-															0.0f, 0.0f, destX, destY, 1.0f, 1.0f, angle, 0);
-			}
-			else
-			{
-				al_draw_tinted_scaled_rotated_bitmap_region(source->tex, srcX, srcY, srcWidth, srcHeight, 
-															al_map_rgba_f(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha),
-															0.0f, 0.0f, destX, destY, 1.0f, 1.0f, angle, ALLEGRO_FLIP_HORIZONTAL);
-			}
-		}
+		SDL_SetTextureAlphaModFloat(source->tex, alpha);
+		SDL_FRect src = {srcX, srcY, srcWidth, srcHeight};
+		SDL_FRect dst = {destX, destY, srcWidth, srcHeight};
+		renderTexture(source->tex, &src, &dst, flipped, angle);
 	}
 
 	void Graphics::DrawCanvas(Canvas* canvas, float destX, float destY)
 	{
-		if(!canvas)
+		if(!canvas || !canvas->getBuffer())
 		{
-			al_show_native_message_box(TF::engine->display, "Error", "Error", "[CANVAS DRAW] The canvas is NULL!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			TOAST_ERROR("[CANVAS DRAW] The canvas is NULL!");
 			return;
 		}
 
-		//std::cout << "[CANVAS] ALPHA: " << canvas->alpha << "\n";
-		//al_draw_bitmap(canvas->getBuffer(), canvas->x, canvas->x, 0);
-		//al_draw_tinted_bitmap(canvas->getBuffer(), al_map_rgba_f(1.0f, 1.0f, 1.0f, canvas->alpha), canvas->x, canvas->x, 0);
-
-		al_draw_tinted_bitmap(canvas->getBuffer(), 
-							al_map_rgba_f(1.0f * canvas->alpha, 1.0f * canvas->alpha, 1.0f * canvas->alpha, canvas->alpha), 
-							destX, destY, 0);
+		SDL_Texture* buffer = canvas->getBuffer();
+		// the buffer holds premultiplied colors (see Canvas::init),
+		// so the alpha has to scale the color as well
+		SDL_SetTextureColorModFloat(buffer, canvas->alpha, canvas->alpha, canvas->alpha);
+		SDL_SetTextureAlphaModFloat(buffer, canvas->alpha);
+		SDL_FRect dst = {destX, destY, float(canvas->width), float(canvas->height)};
+		SDL_RenderTexture(TF::engine->renderer, buffer, NULL, &dst);
 	}
 
 	void Graphics::DrawTextFont(Font* font, const std::string& text, byte r, byte g, byte b, float x, float y)
 	{
-		if(!font)
+		if(!font || !font->getHandle())
 		{
-			al_show_native_message_box(TF::engine->display, "Error", "Error", "[TEXT DRAW] The font is NULL!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			TOAST_ERROR("[TEXT DRAW] The font is NULL!");
 			return;
 		}
 
-		al_draw_text(font->getAllegro(), al_map_rgb(r, g, b), x, y, 0, text.c_str());
+		if(text.empty())
+			return;
+
+		SDL_Color color = {r, g, b, 255};
+		SDL_Surface* surface = TTF_RenderText_Blended(font->getHandle(), text.c_str(), 0, color);
+		if(!surface)
+		{
+			TOAST_ERROR(SDL_GetError());
+			return;
+		}
+
+		SDL_Texture* tex = SDL_CreateTextureFromSurface(TF::engine->renderer, surface);
+		if(tex)
+		{
+			SDL_FRect dst = {x, y, float(surface->w), float(surface->h)};
+			SDL_RenderTexture(TF::engine->renderer, tex, NULL, &dst);
+			SDL_DestroyTexture(tex);
+		}
+		SDL_DestroySurface(surface);
 	}
 }

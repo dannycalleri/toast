@@ -1,0 +1,52 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+Toast Framework: a 2D C++17 game framework modeled on FlashPunk (AS3), built on **SDL3** (+ SDL3_image, SDL3_ttf). Everything lives in `namespace Toast`. The repo has:
+
+- `ToastFramework/` — the framework, built as the static library `toast`.
+- `DEMO/` — minimal sample game; the intended template for new games.
+- `ROGUELIKE/` — larger sample with procedural dungeon generation (`Dungeon`, `RoomsManager`, `Room`), rooms authored as Ogmo Editor files in `ROGUELIKE/rooms/` (`.oep`/`.oel`). Not yet in the CMake build.
+- `tests/` — a tiny self-contained test runner (`ToastTest.h`) and the `toast_tests` executable.
+
+## Building and testing
+
+```bash
+brew install cmake sdl3 sdl3_image sdl3_ttf      # macOS; elsewhere use a package manager/vcpkg, or -DTOAST_FETCH_DEPS=ON
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure        # all tests
+ctest --test-dir build -R input_keymap            # one test (or: build/tests/toast_tests input_keymap)
+./build/demo
+```
+
+- Sanitizers: `-DTOAST_SANITIZERS=undefined` (or `address,undefined`). On this macOS 26 / Apple clang 17 machine ASan hangs at process start even for an empty `main`, so use UBSan only here.
+- New framework `.cpp` files are picked up automatically (`file(GLOB ... CONFIGURE_DEPENDS)`); new test files and test names must be added to `tests/CMakeLists.txt` (each test is registered with CTest by name).
+- Engine tests run headless on SDL's `dummy` video driver with the `software` renderer (see `startEngine` in `tests/test_engine.cpp`), and can read pixels back with `SDL_RenderReadPixels`.
+- Game assets are listed per target in `CMakeLists.txt` and copied next to the executable by `toast_copy_assets`; a new asset must be added there.
+
+## Architecture
+
+**Global state via `TF` (`TF.h`).** A class of static members acts as the service locator: `TF::engine` (its `window`/`renderer` are the SDL handles), `TF::world` (the single active World), `TF::camera`, `TF::console`, `TF::font`, `TF::elapsed` (seconds since last frame), `TF::width/height` (logical resolution), `TF::debug`, `TF::paused`, and a texture cache (`TF::getTexture/addTexture`, freed by `destroyAllTextures`). `TF::resolvePath` makes asset paths relative to the executable (`SDL_GetBasePath`); every loader goes through it. `Input` (`ToastInput.h`) is likewise all-static; SDL scancodes are mapped to the `TOAST_KEY_*` codes (`ToastKeycodes.h`, Allegro-compatible values) by `Input::keyFromScancode`.
+
+**Bootstrapping a game** (see `DEMO/`): `main.cpp` includes `<SDL3/SDL_main.h>` (only there — it must be in exactly one translation unit), creates a `Game` subclass of `Engine` and calls `run()`. The `Game` constructor passes the logical resolution to `Engine(width, height, fullscreen)` and assigns `TF::world = new MyWorld()`. Game code includes `Toast.h` or individual `Toast*.h` headers; `ToastCommon.h` holds the SDL includes and forward declarations.
+
+**Engine (`ToastEngine.cpp`)**: `initEngine()` creates the window + renderer and sets `SDL_SetRenderLogicalPresentation(LETTERBOX)`, so the game always draws at its logical size and SDL scales/letterboxes to any window size or pixel density. `EventManager::checkEvents` polls SDL events and runs mouse events through `SDL_ConvertEventToRenderCoordinates`, so `Input::mouseX/Y` are already in game coordinates. If init fails the engine shows a message box and exits. `~Engine` deletes world, console, font and textures *before* destroying the renderer — anything owning an `SDL_Texture`/`TTF_Font` must die first.
+
+**World → Entity → Graphic hierarchy (FlashPunk model)**:
+- `World` owns `entities` and standalone `graphicsList`; override `update()` (call the base to tick children). Render order is insertion order: all entities, then world graphics. `World::remove()` **deletes** the entity; the World destructor deletes everything it holds.
+- `Entity` has position, hitbox (`width/height/originX/originY`), `active/visible/collidable`, and one or more `Graphic`s.
+- `Graphic` is the base for drawables: `Image`, `Spritemap` (+ `Anim`), `Tilemap`, `Canvas`, `Text`. Key fields: `scrollX/scrollY` (parallax factor vs `TF::camera`; 1 = normal), `relative` (draw relative to parent Entity), `flipped`, `alpha`, and `angle` (radians, pivot at the top-left corner). All drawing goes through `Graphics::*` (`ToastGraphics.cpp`).
+- `Canvas` is an SDL render-target texture. Drawing into it switches the render target and restores the previous one; its contents are premultiplied (it uses `SDL_BLENDMODE_BLEND_PREMULTIPLIED`, and `DrawCanvas` applies `alpha` to color and alpha). `Text` and `Tilemap` are canvases.
+- Collision: `Mask` base with `Hitbox` and `Grid` (tile-based, `loadFromString` CSV); collision dispatch between mask types is only partly implemented. `SpriteSheet`/`Sprite` are deprecated stubs.
+
+**Debugging aids**: `TF::debug = true` enables the in-game `Console` overlay (ENTER toggles pause + entity selection/dragging). `TOAST_ERROR(msg)` logs via `SDL_LogError`; `fatalError` also shows a message box. `TOAST_SAFE_DELETE(x)` is the delete-and-null idiom.
+
+## Conventions
+
+- Files are `Toast<Class>.h/.cpp`, classes are unprefixed inside `namespace Toast`; include guards are `TOAST<NAME>_H`; every framework file starts with the "Toast 2D game framework" copyright banner.
+- Tabs for indentation, Allman braces, raw pointers with manual ownership (no smart pointers) — the public API stays this way on purpose.
+- `rapidxml-1.13/` is vendored third-party code; don't modify it.
+- Some sample-game identifiers/assets are in Italian (e.g. `tile_caverna.png`, `animazione_loop_goblin.png`).

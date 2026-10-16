@@ -21,13 +21,13 @@ namespace Toast
 		Font(const std::string& fileName, int size);
 		virtual ~Font();
 
-		inline ALLEGRO_FONT* getAllegro() { return font; }
+		inline TTF_Font* getHandle() { return font; }
 
 		int size;
 
 	private:
 		// interal font representation
-		ALLEGRO_FONT* font;
+		TTF_Font* font;
 		// font filename
 		std::string fileName;
 	};

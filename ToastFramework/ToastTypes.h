@@ -10,10 +10,12 @@ Copyright (C) 2013 Danny Calleri
 #ifndef TOASTTYPES_H
 #define TOASTTYPES_H
 
+#include <cstdint>
+
 namespace Toast
 {
-	typedef unsigned __int16 uint16;
-	typedef unsigned __int32 uint32;
+	typedef std::uint16_t uint16;
+	typedef std::uint32_t uint32;
 	typedef unsigned char byte;
 
 	struct Point

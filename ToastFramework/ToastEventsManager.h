@@ -22,8 +22,6 @@ namespace Toast
 
 		// it catches every event and call
 		// the correct event handler method
-		//virtual void checkEvents(SDL_Event* event);
-
 		virtual void checkEvents();
 
 		virtual void onMouseFocus() {};
@@ -34,10 +32,6 @@ namespace Toast
 		virtual void onMinimize()	{};
 		virtual void onVideoResize(int width, int height) {};
 		virtual void onExit() {};
-		
-	protected:
-		// event queue for allegro events
-		ALLEGRO_EVENT_QUEUE* event_queue;
 	};
 }
 

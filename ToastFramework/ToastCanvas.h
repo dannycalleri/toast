@@ -21,7 +21,7 @@ namespace Toast
 		Canvas(unsigned int width, unsigned int height, bool transparent=true);
 		virtual ~Canvas();
 
-		inline ALLEGRO_BITMAP* getBuffer() { return buffer; }
+		inline SDL_Texture* getBuffer() { return buffer; }
 
 		// for rendering canvas on the target
 		// buffer
@@ -43,7 +43,7 @@ namespace Toast
 
 		void init();
 
-		ALLEGRO_BITMAP* buffer; // rendering buffer for this canvas
+		SDL_Texture* buffer; // rendering buffer for this canvas
 	};
 }
 
