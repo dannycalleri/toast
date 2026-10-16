@@ -35,7 +35,9 @@ foreach(name
         roguelike_every_room_file_loads_with_its_doors
         roguelike_missing_room_file_gives_an_empty_room
         roguelike_dungeons_generate_without_overlapping_rooms
-        roguelike_room_copies_do_not_reread_the_room_file)
+        roguelike_room_copies_do_not_reread_the_room_file
+        roguelike_generation_gives_up_when_no_room_can_be_placed)
     add_test(NAME ${name} COMMAND roguelike_tests ${name})
-    set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
+    # dungeon generation used to retry forever; a hang must fail, not block
+    set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 endforeach()

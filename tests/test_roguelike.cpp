@@ -81,7 +81,7 @@ TOAST_TEST(roguelike_dungeons_generate_without_overlapping_rooms)
 	for(int run = 0; run < 25; run++)
 	{
 		world->dungeon->destroy();
-		world->dungeon->generate(10);
+		CHECK(world->dungeon->generate(10));
 
 		CHECK(world->dungeon->rooms.size() >= 9);
 		for(Room* room : world->dungeon->rooms)
@@ -110,6 +110,24 @@ TOAST_TEST(roguelike_room_copies_do_not_reread_the_room_file)
 	CHECK(copy.doors.size() == original.doors.size());
 	CHECK(copy.box->x == original.box->x && copy.box->width == original.box->width);
 	CHECK(copy.hasDoor(UP) && copy.hasDoor(DOWN));
+
+	delete engine;
+}
+
+TOAST_TEST(roguelike_generation_gives_up_when_no_room_can_be_placed)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+
+	// what RoomsManager is left with when the room files fail to load
+	world->roomsManager->uRooms.clear();
+	world->roomsManager->dRooms.clear();
+	world->roomsManager->lRooms.clear();
+	world->roomsManager->rRooms.clear();
+
+	CHECK(!world->dungeon->generate(10));
+	CHECK(world->dungeon->rooms.empty());
+	CHECK(world->entities.empty());
 
 	delete engine;
 }

@@ -24,7 +24,8 @@ namespace Toast
 {
 	Dungeon::Dungeon(GameWorld* gameWorld):
 		world(gameWorld),
-		MAX_TRIES(10)
+		MAX_TRIES(10),
+		MAX_ATTEMPTS(100)
 	{
 		size = 0;
 		rooms.clear();
@@ -57,11 +58,24 @@ namespace Toast
 		rooms.push_back(r);
 	}
 
-	void Dungeon::generate(int size)
+	bool Dungeon::generate(int size)
 	{
-		// creating rooms for the 
-		// current dungeon
-		createRooms(size);
+		// an attempt that gets stuck starts over from scratch; capped,
+		// because when no layout can be built (e.g. the room files
+		// failed to load) every attempt fails
+		bool created = false;
+		for(int attempt = 0; attempt < MAX_ATTEMPTS && !created; attempt++)
+		{
+			created = createRooms(size);
+			if(!created)
+				destroy();
+		}
+
+		if(!created)
+		{
+			TOAST_ERROR("[DUNGEON] no dungeon could be generated");
+			return false;
+		}
 			
 		// calculate distance
 		// from the startRoom to
@@ -79,9 +93,10 @@ namespace Toast
 
 		if(TF::debug)
 			SDL_Log("[DUNGEON] generated %d rooms dungeon", size);
+		return true;
 	}
 
-	void Dungeon::createRooms(unsigned int size)
+	bool Dungeon::createRooms(unsigned int size)
 	{
 		this->size = size;
 		cycles = 0;
@@ -116,10 +131,7 @@ namespace Toast
 
 			if(cycles >= maxCycles)
 			{
-				// increase number of potential blocks
-				destroy();
-				createRooms(size);
-				return;
+				return false;
 			}
 
 			currentRoom = rooms[count];
@@ -186,10 +198,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -235,10 +244,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -284,10 +290,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -333,10 +336,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -346,6 +346,8 @@ namespace Toast
 				}
 			}
 		}
+
+		return true;
 	}
 
 	void Dungeon::calculateDistance()

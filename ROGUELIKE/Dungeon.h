@@ -35,9 +35,10 @@ namespace Toast
 		virtual ~Dungeon();
 
 		/**
-		*	Generate a new random dungeon of the specified size
+		*	Generate a new random dungeon of the specified size;
+		*	false (and no rooms) when no layout could be built
 		*/
-		void generate(int size);
+		bool generate(int size);
 		void destroy();
 
 		unsigned int size;
@@ -46,8 +47,8 @@ namespace Toast
 	private:
 
 		// creating rooms for the 
-		// current dungeon
-		void createRooms(unsigned int size);
+		// current dungeon; false when this attempt got stuck
+		bool createRooms(unsigned int size);
 
 		// calculates distance
 		// from the startRoom to
@@ -74,6 +75,7 @@ namespace Toast
 		GameWorld* world;
 		int tries;
 		const int MAX_TRIES;
+		const int MAX_ATTEMPTS;
 		int cycles;
 		int maxCycles;
 
