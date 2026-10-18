@@ -16,6 +16,7 @@ Copyright (C) 2013 Danny Calleri
 
 namespace Toast
 {
+	class Emitter;
 	class Player;
 	class Room;
 
@@ -36,6 +37,7 @@ namespace Toast
 		Level level;
 		Player* player;
 		Room* room;
+		Emitter* effects;
 
 	private:
 		void showRoom(Room* room);

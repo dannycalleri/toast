@@ -104,7 +104,7 @@ set(ROGUELIKE_ASSETS
 
 # everything but main(), so the tests can build levels
 add_library(roguelike_game STATIC
-    ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp ROGUELIKE/Level.cpp
+    ROGUELIKE/Bullet.cpp ROGUELIKE/Effects.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp ROGUELIKE/Level.cpp
     ROGUELIKE/Maze.cpp ROGUELIKE/Player.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomTemplates.cpp)
 target_include_directories(roguelike_game PUBLIC ROGUELIKE)
 target_link_libraries(roguelike_game PUBLIC toast)

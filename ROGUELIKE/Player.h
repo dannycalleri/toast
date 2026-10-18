@@ -15,6 +15,7 @@ Copyright (C) 2013 Danny Calleri
 
 namespace Toast
 {
+	class Emitter;
 	class Room;
 	class Spritemap;
 
@@ -24,6 +25,8 @@ namespace Toast
 	{
 	public:
 		static const float SPEED;
+		static const float FIRE_COOLDOWN;
+		static const float MOUTH_SECONDS;
 
 		Player(float x, float y);
 
@@ -33,11 +36,20 @@ namespace Toast
 		bool overlapsSolid(float atX, float atY);
 
 		Room* room;
+		Emitter* effects;
 		Direction facing;
+		int shots;
 
 	private:
 		void moveAxis(float& position, float delta);
 		void animate(float dx, float dy);
+		// (aimX, aimY) is the direction from the mouth; true while the player fires
+		bool aim(float& aimX, float& aimY);
+		float mouthX(Direction d) const;
+		void fire(float aimX, float aimY);
+
+		float cooldown;
+		float mouthTime;
 
 		Spritemap* sprite;
 	};

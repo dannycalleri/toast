@@ -53,6 +53,11 @@ foreach(name
         roguelike_kid_stops_at_a_wall_and_slides_along_it
         roguelike_walking_through_a_door_slides_to_the_next_room
         roguelike_walking_along_a_wall_past_a_door_stays_in_the_room
+        roguelike_holding_fire_spits_bullets_from_the_mouth_at_the_cooldown_rate
+        roguelike_bullet_breaks_on_a_wall_into_particles
+        roguelike_bullet_breaks_at_the_end_of_its_range
+        roguelike_new_game_removes_the_bullets_of_the_old_maze
+        roguelike_shots_are_never_closer_than_the_cooldown
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze

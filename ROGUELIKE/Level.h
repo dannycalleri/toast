@@ -29,6 +29,8 @@ namespace Toast
 		// false, and nothing built, when the templates did not load
 		bool build(World* world, unsigned int seed);
 		void clear(World* world);
+		// for when the world already deleted the rooms (World::removeAll)
+		void forgetRooms();
 
 		// NULL for a cell without a room
 		Room* roomAt(int cell) const;

@@ -2,11 +2,14 @@
 #include "HeadlessVideo.h"
 #include "Toast.h"
 
+#include "Bullet.h"
 #include "GameWorld.h"
 #include "Level.h"
 #include "Player.h"
 #include "Room.h"
 #include "RoomTemplates.h"
+#include "ToastEmitter.h"
+#include "ToastInput.h"
 
 #include <set>
 #include <string>
@@ -265,5 +268,158 @@ TOAST_TEST(roguelike_walking_along_a_wall_past_a_door_stays_in_the_room)
 	}
 	CHECK(world->room == start);
 
+	delete engine;
+}
+
+namespace
+{
+	std::vector<Bullet*> bulletsIn(World* world)
+	{
+		std::vector<Bullet*> bullets;
+		for(size_t i = 0; i < world->entities.size(); i++)
+		{
+			Bullet* bullet = dynamic_cast<Bullet*>(world->entities[i]);
+			if(bullet)
+				bullets.push_back(bullet);
+		}
+		return bullets;
+	}
+
+	void releaseInput()
+	{
+		Input::leftMouseDown = false;
+		for(int key = 0; key < TOAST_KEY_MAX; key++)
+			Input::downKeys[key] = false;
+	}
+}
+
+TOAST_TEST(roguelike_holding_fire_spits_bullets_from_the_mouth_at_the_cooldown_rate)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Player* kid = world->player;
+
+	// the cursor 50 px straight above the kid, in game coordinates
+	Input::leftMouseDown = true;
+	Input::mouseX = (int)(kid->x - TF::camera->x);
+	Input::mouseY = (int)(kid->y - 6 - TF::camera->y) - 50;
+	TF::elapsed = 0.05f;
+	world->update();
+
+	std::vector<Bullet*> bullets = bulletsIn(world);
+	CHECK(bullets.size() == 1);
+	CHECK(SDL_fabsf(bullets[0]->x - kid->x) < 1.0f);
+	// it already moved this frame: its start is travelled px below it, at the mouth
+	CHECK(SDL_fabsf(bullets[0]->y + bullets[0]->travelled - (kid->y - 6)) < 0.5f);
+	CHECK(bullets[0]->velocityY < 0 && SDL_fabsf(bullets[0]->velocityX) < 1.0f);
+	CHECK(world->effects->particleCount() > 0);
+	CHECK(kid->facing == UP);
+
+	for(int i = 1; i < 20; i++)
+		world->update();
+	CHECK(kid->shots == 4 || kid->shots == 5);
+
+	releaseInput();
+	Input::downKeys[TOAST_KEY_LEFT] = true;
+	for(int i = 0; i < 6; i++)
+		world->update();
+	releaseInput();
+	bullets = bulletsIn(world);
+	CHECK(bullets.back()->velocityX < 0 && SDL_fabsf(bullets.back()->velocityY) < 1.0f);
+	CHECK(kid->facing == LEFT);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_bullet_breaks_on_a_wall_into_particles)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Room* room = world->room;
+	world->player->x = room->x + 60;
+
+	// heading for the right wall, 54 px away
+	float wallX = room->x + (Room::COLUMNS - 1) * Room::TILE;
+	Bullet* bullet = new Bullet(wallX - 54, room->y + 3 * Room::TILE + 8, 1, 0, room, world->effects);
+	world->add(bullet);
+	int particlesBefore = world->effects->particleCount();
+
+	TF::elapsed = 0.05f;
+	int frames = 0;
+	while(!bulletsIn(world).empty() && frames < 20)
+	{
+		world->update();
+		frames++;
+	}
+	CHECK(bulletsIn(world).empty());
+	// 54 px at 180 px/s is 0.3 s: it broke on the wall, not at the end of its range
+	CHECK(frames == 6 || frames == 7);
+	CHECK(world->effects->particleCount() >= particlesBefore + 6);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_bullet_breaks_at_the_end_of_its_range)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Room* room = world->room;
+
+	Bullet* bullet = new Bullet(room->x + 2 * Room::TILE, room->y + 4 * Room::TILE + 8, 1, 0, room, world->effects);
+	world->add(bullet);
+	TF::elapsed = 0.05f;
+	int frames = 0;
+	while(!bulletsIn(world).empty() && frames < 40)
+	{
+		world->update();
+		frames++;
+	}
+	CHECK(bulletsIn(world).empty());
+	// 150 px at 180 px/s: about 0.83 s
+	CHECK(frames >= 16 && frames <= 18);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_new_game_removes_the_bullets_of_the_old_maze)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Input::downKeys[TOAST_KEY_RIGHT] = true;
+	TF::elapsed = 0.05f;
+	world->update();
+	releaseInput();
+	CHECK(bulletsIn(world).size() == 1);
+
+	world->newGame(99);
+	CHECK(bulletsIn(world).empty());
+	CHECK(world->entities.size() == world->level.maze.rooms.size() + 1);
+	world->update();
+	delete engine;
+}
+
+TOAST_TEST(roguelike_shots_are_never_closer_than_the_cooldown)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Input::downKeys[TOAST_KEY_RIGHT] = true;
+
+	// uneven frames: 0.30 s then 0.20 s must not give a 0.20 s gap
+	const float frames[] = {0.01f, 0.30f, 0.20f, 0.04f, 0.10f, 0.15f};
+	float now = 0;
+	float lastShot = -1;
+	int shots = 0;
+	for(size_t i = 0; i < sizeof(frames) / sizeof(frames[0]); i++)
+	{
+		TF::elapsed = frames[i];
+		now += frames[i];
+		world->update();
+		if(world->player->shots != shots)
+		{
+			if(lastShot >= 0)
+				CHECK(now - lastShot >= Player::FIRE_COOLDOWN - 0.0001f);
+			lastShot = now;
+			shots = world->player->shots;
+		}
+	}
+	releaseInput();
+	CHECK(shots >= 2);
 	delete engine;
 }

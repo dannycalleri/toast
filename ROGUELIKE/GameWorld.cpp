@@ -8,10 +8,12 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "GameWorld.h"
+#include "Effects.h"
 #include "Player.h"
 #include "Room.h"
 #include "TF.h"
 #include "ToastCanvas.h"
+#include "ToastEmitter.h"
 #include "ToastEngine.h"
 #include "ToastInput.h"
 #include "ToastRandom.h"
@@ -26,6 +28,10 @@ namespace Toast
 		room(NULL),
 		slideTime(-1)
 	{
+		// added before the HUD band, so particles never draw over the HUD
+		effects = Effects::create();
+		addGraphic(effects);
+
 		hudBand = new Canvas(Room::WIDTH, HUD_HEIGHT, false);
 		hudBand->clear(0x1a, 0x1c, 0x2c);
 		hudBand->scrollX = 0;
@@ -42,8 +48,9 @@ namespace Toast
 
 	void GameWorld::newGame(unsigned int seed)
 	{
-		if(player)
-			remove(player);
+		// everything in the world belongs to the old maze; bullets point at its rooms
+		removeAll();
+		level.forgetRooms();
 		player = NULL;
 		room = NULL;
 		slideTime = -1;
@@ -54,6 +61,7 @@ namespace Toast
 		room = level.startRoom();
 		player = new Player(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2 + Room::TILE * 2);
 		player->room = room;
+		player->effects = effects;
 		add(player);
 		showRoom(room);
 	}

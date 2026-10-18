@@ -86,6 +86,11 @@ namespace Toast
 		rooms.clear();
 	}
 
+	void Level::forgetRooms()
+	{
+		rooms.clear();
+	}
+
 	Room* Level::roomAt(int cell) const
 	{
 		if(cell < 0 || cell >= (int)rooms.size())
