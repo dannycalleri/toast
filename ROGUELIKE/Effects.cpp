@@ -19,6 +19,8 @@ namespace Toast
 		const char* const IMPACT = "impact";
 		const char* const SPLASH = "splash";
 		const char* const IMPACT_RING = "impact ring";
+		const char* const DIRT = "dirt";
+		const char* const DIRT_BURST = "dirt burst";
 
 		Emitter* create()
 		{
@@ -42,6 +44,17 @@ namespace Toast
 			effects->setMotion(IMPACT_RING, 0, 0, 0.18f);
 			effects->setScale(IMPACT_RING, 0.3f, 1.2f);
 			effects->setAlpha(IMPACT_RING, 1, 0);
+			// specks thrown up by the ground before a cat comes out
+			effects->newType(DIRT, std::vector<int>(1, DUST));
+			effects->setMotion(DIRT, -SDL_PI_F, 6, 0.3f, SDL_PI_F, 4, 0.2f);
+			effects->setGravity(DIRT, 80);
+			effects->setScale(DIRT, 0.6f, 0.4f);
+
+			effects->newType(DIRT_BURST, std::vector<int>(1, BIG_DUST));
+			effects->setMotion(DIRT_BURST, 0, 10, 0.35f, FULL_TURN, 14, 0.2f);
+			effects->setGravity(DIRT_BURST, 60);
+			effects->setScale(DIRT_BURST, 1, 0.3f);
+			effects->setAlpha(DIRT_BURST, 1, 0);
 			return effects;
 		}
 	}

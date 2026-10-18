@@ -8,6 +8,7 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "Bullet.h"
+#include "Cat.h"
 #include "Effects.h"
 #include "Room.h"
 #include "TF.h"
@@ -21,11 +22,13 @@ namespace Toast
 	const float Bullet::SPEED = 180.0f;
 	const float Bullet::RANGE = 150.0f;
 
-	Bullet::Bullet(float x, float y, float directionX, float directionY, Room* room, Emitter* effects) :
+	Bullet::Bullet(float x, float y, float directionX, float directionY, Room* room, Emitter* effects,
+				   const std::vector<Cat*>* cats) :
 		Entity(x, y),
 		travelled(0.0f),
 		room(room),
-		effects(effects)
+		effects(effects),
+		cats(cats)
 	{
 		float length = std::sqrt(directionX * directionX + directionY * directionY);
 		if(length == 0.0f)
@@ -54,6 +57,25 @@ namespace Toast
 			effects->emit(particle, x, y);
 	}
 
+	bool Bullet::hitsCat() const
+	{
+		if(!cats)
+			return false;
+		for(size_t i = 0; i < cats->size(); i++)
+		{
+			if((*cats)[i]->active() && (*cats)[i]->bodyContains(x, y))
+				return true;
+		}
+		return false;
+	}
+
+	void Bullet::breakApart()
+	{
+		burst(Effects::IMPACT, 6);
+		burst(Effects::IMPACT_RING, 1);
+		TF::world->removeLater(this);
+	}
+
 	void Bullet::update()
 	{
 		// steps of at most a quarter tile, so a slow frame cannot carry it through a wall
@@ -63,11 +85,9 @@ namespace Toast
 		{
 			x += velocityX * TF::elapsed / steps;
 			y += velocityY * TF::elapsed / steps;
-			if(room && room->isSolidAt(x, y))
+			if((room && room->isSolidAt(x, y)) || hitsCat())
 			{
-				burst(Effects::IMPACT, 6);
-				burst(Effects::IMPACT_RING, 1);
-				TF::world->removeLater(this);
+				breakApart();
 				return;
 			}
 		}

@@ -11,9 +11,11 @@ Copyright (C) 2013 Danny Calleri
 #define BULLET_H
 
 #include "ToastEntity.h"
+#include <vector>
 
 namespace Toast
 {
+	class Cat;
 	class Emitter;
 	class Room;
 
@@ -24,7 +26,8 @@ namespace Toast
 		static const float RANGE;
 
 		// (directionX, directionY) need not be normalised
-		Bullet(float x, float y, float directionX, float directionY, Room* room, Emitter* effects);
+		Bullet(float x, float y, float directionX, float directionY, Room* room, Emitter* effects,
+			   const std::vector<Cat*>* cats = NULL);
 
 		virtual void update();
 
@@ -34,9 +37,12 @@ namespace Toast
 
 	private:
 		void burst(const char* particle, int count);
+		bool hitsCat() const;
+		void breakApart();
 
 		Room* room;
 		Emitter* effects;
+		const std::vector<Cat*>* cats;
 	};
 }
 

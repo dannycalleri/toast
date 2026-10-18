@@ -135,6 +135,27 @@ namespace PixelArt
 				in >> sheet.columns;
 			else if(word == "flash")
 				sheet.flash = true;
+			else if(word == "variant")
+			{
+				Variant variant;
+				in >> variant.name;
+				std::string swap;
+				while(in >> swap)
+				{
+					if(swap.size() != 3 || swap[1] != '=' || !palette.colours.count(swap[0]) || !palette.colours.count(swap[2]))
+					{
+						error = where(path, number) + "bad swap \"" + swap + "\", expected <key>=<key>";
+						return false;
+					}
+					variant.swaps[swap[0]] = swap[2];
+				}
+				if(variant.name.empty() || variant.swaps.empty())
+				{
+					error = where(path, number) + "expected \"variant <name> a=b ...\"";
+					return false;
+				}
+				sheet.variants.push_back(variant);
+			}
 			else if(word == "frame")
 			{
 				if(sheet.frameWidth <= 0 || sheet.frameHeight <= 0 || sheet.columns <= 0)
@@ -160,7 +181,7 @@ namespace PixelArt
 		return true;
 	}
 
-	SDL_Surface* render(const Sheet& sheet, const Palette& palette)
+	SDL_Surface* render(const Sheet& sheet, const Palette& palette, const std::map<char, char>& swaps)
 	{
 		int count = (int)sheet.frames.size() * (sheet.flash ? 2 : 1);
 		int columns = count < sheet.columns ? count : sheet.columns;
@@ -185,6 +206,9 @@ namespace PixelArt
 					char key = frame[y][x];
 					if(key == '.')
 						continue;
+					std::map<char, char>::const_iterator swap = swaps.find(key);
+					if(swap != swaps.end())
+						key = swap->second;
 					SDL_Color c = white ? SDL_Color{255, 255, 255, 255} : palette.colours.find(key)->second;
 					SDL_WriteSurfacePixel(surface, originX + x, originY + y, c.r, c.g, c.b, c.a);
 				}
@@ -195,14 +219,21 @@ namespace PixelArt
 
 	bool writeSheet(const Sheet& sheet, const Palette& palette, const std::string& outDir, std::string& error)
 	{
-		SDL_Surface* surface = render(sheet, palette);
-		std::string path = outDir + "/" + sheet.name + ".png";
-		bool saved = surface && IMG_SavePNG(surface, path.c_str());
-		SDL_DestroySurface(surface);
-		if(!saved)
+		std::vector<Variant> outputs(1, Variant());
+		outputs[0].name = sheet.name;
+		outputs.insert(outputs.end(), sheet.variants.begin(), sheet.variants.end());
+
+		for(size_t i = 0; i < outputs.size(); i++)
 		{
-			error = path + ": " + SDL_GetError();
-			return false;
+			SDL_Surface* surface = render(sheet, palette, outputs[i].swaps);
+			std::string path = outDir + "/" + outputs[i].name + ".png";
+			bool saved = surface && IMG_SavePNG(surface, path.c_str());
+			SDL_DestroySurface(surface);
+			if(!saved)
+			{
+				error = path + ": " + SDL_GetError();
+				return false;
+			}
 		}
 		return true;
 	}

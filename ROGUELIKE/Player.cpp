@@ -10,6 +10,7 @@ Copyright (C) 2013 Danny Calleri
 #include "Player.h"
 #include "Bullet.h"
 #include "Effects.h"
+#include "Movement.h"
 #include "Room.h"
 #include "TF.h"
 #include "ToastInput.h"
@@ -55,6 +56,7 @@ namespace Toast
 		Entity(x, y),
 		room(NULL),
 		effects(NULL),
+		cats(NULL),
 		facing(DOWN),
 		shots(0),
 		cooldown(0.0f),
@@ -83,38 +85,12 @@ namespace Toast
 
 	bool Player::overlapsSolid(float atX, float atY)
 	{
-		if(!room)
-			return false;
-		float left = atX - originX;
-		float top = atY - originY;
-		// the hitbox is smaller than a tile, so its corners are enough
-		float right = left + width - 0.01f;
-		float bottom = top + height - 0.01f;
-		return room->isSolidAt(left, top) || room->isSolidAt(right, top) ||
-			   room->isSolidAt(left, bottom) || room->isSolidAt(right, bottom);
-	}
-
-	void Player::moveAxis(float& position, float delta)
-	{
-		// at most a pixel per step, so a long move (a slow frame) cannot jump a wall
-		float start = position;
-		int steps = (int)std::ceil(std::fabs(delta));
-		for(int i = 1; i <= steps; i++)
-		{
-			float previous = position;
-			position = start + delta * i / steps;
-			if(overlapsSolid(x, y))
-			{
-				position = previous;
-				return;
-			}
-		}
+		return Movement::overlapsSolid(*this, room, atX, atY);
 	}
 
 	void Player::move(float dx, float dy)
 	{
-		moveAxis(x, dx);
-		moveAxis(y, dy);
+		Movement::move(*this, room, dx, dy);
 	}
 
 	void Player::animate(float dx, float dy)
@@ -165,7 +141,7 @@ namespace Toast
 
 		float fromX = mouthX(facing);
 		float fromY = y + MOUTH_Y;
-		TF::world->add(new Bullet(fromX, fromY, aimX, aimY, room, effects));
+		TF::world->add(new Bullet(fromX, fromY, aimX, aimY, room, effects, cats));
 		if(effects)
 		{
 			for(int i = 0; i < 3; i++)

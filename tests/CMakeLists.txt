@@ -58,6 +58,11 @@ foreach(name
         roguelike_bullet_breaks_at_the_end_of_its_range
         roguelike_new_game_removes_the_bullets_of_the_old_maze
         roguelike_shots_are_never_closer_than_the_cooldown
+        roguelike_shake_trauma_is_capped_and_decays_to_zero
+        roguelike_spawning_cat_is_harmless_and_bullets_pass_over_it
+        roguelike_pouncer_crouches_before_it_leaps
+        roguelike_zoomie_closes_in_on_the_kid
+        roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze
@@ -70,6 +75,7 @@ foreach(name
         art_unknown_colour_key_is_reported_with_its_line
         art_flash_frames_are_white_copies
         art_palette_rejects_bad_colours_and_repeated_keys
+        art_variant_redraws_the_sheet_with_swapped_keys
         rooms_every_template_parses
         rooms_bad_template_is_skipped_and_logged
         rooms_every_floor_cell_is_reachable_from_every_door)

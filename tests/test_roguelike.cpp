@@ -3,14 +3,17 @@
 #include "Toast.h"
 
 #include "Bullet.h"
+#include "Cat.h"
 #include "GameWorld.h"
 #include "Level.h"
 #include "Player.h"
 #include "Room.h"
 #include "RoomTemplates.h"
+#include "ScreenShake.h"
 #include "ToastEmitter.h"
 #include "ToastInput.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 
@@ -421,5 +424,148 @@ TOAST_TEST(roguelike_shots_are_never_closer_than_the_cooldown)
 	}
 	releaseInput();
 	CHECK(shots >= 2);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_shake_trauma_is_capped_and_decays_to_zero)
+{
+	ScreenShake shake;
+	shake.add(0.8f);
+	shake.add(0.8f);
+	CHECK(shake.trauma == 1.0f);
+
+	ScreenShake small;
+	small.add(0.5f);
+	for(int i = 0; i < 10; i++)
+		small.update(0.1f);
+	CHECK(small.trauma == 0.0f);
+	float x, y;
+	small.offset(x, y);
+	CHECK(x == 0.0f && y == 0.0f);
+
+	ScreenShake strong;
+	strong.add(0.5f);
+	for(int i = 0; i < 50; i++)
+	{
+		strong.offset(x, y);
+		CHECK(SDL_fabsf(x) <= ScreenShake::MAX_OFFSET * 0.25f && SDL_fabsf(y) <= ScreenShake::MAX_OFFSET * 0.25f);
+	}
+}
+
+namespace
+{
+	Cat* addCat(GameWorld* world, Cat::Kind kind, float dx, float dy)
+	{
+		Room* room = world->room;
+		Cat* cat = new Cat(room->x + Room::WIDTH / 2 + dx, room->y + Room::HEIGHT / 2 + dy, kind, room,
+						   world->player, world->effects, &world->shake);
+		world->cats.push_back(cat);
+		world->add(cat);
+		return cat;
+	}
+
+	void runFor(GameWorld* world, float seconds)
+	{
+		TF::elapsed = 0.02f;
+		for(float t = 0; t < seconds - 0.001f; t += TF::elapsed)
+			world->update();
+	}
+}
+
+TOAST_TEST(roguelike_spawning_cat_is_harmless_and_bullets_pass_over_it)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	world->player->active = false;
+	Cat* cat = addCat(world, Cat::ZOOMIE, 0, 0);
+
+	runFor(world, 0.2f);
+	CHECK(!cat->active());
+	Bullet* through = new Bullet(cat->x - 30, cat->y - 6, 1, 0, world->room, world->effects, &world->cats);
+	world->add(through);
+	runFor(world, 0.3f);
+	CHECK(bulletsIn(world).size() == 1);
+	CHECK(through->x > cat->x + 10);
+	CHECK(!cat->active());
+
+	float traumaBefore = world->shake.trauma;
+	runFor(world, 0.5f);
+	CHECK(cat->active());
+	CHECK(world->shake.trauma > traumaBefore);
+
+	// the kid on the cat's spot keeps the zoomie in the bullet's path
+	world->player->x = cat->x;
+	world->player->y = cat->y;
+	Bullet* hit = new Bullet(cat->x - 30, cat->y - 6, 1, 0, world->room, world->effects, &world->cats);
+	world->add(hit);
+	runFor(world, 0.3f);
+	CHECK(std::find(world->entities.begin(), world->entities.end(), (Entity*)hit) == world->entities.end());
+	delete engine;
+}
+
+TOAST_TEST(roguelike_pouncer_crouches_before_it_leaps)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	world->player->active = false;
+	Cat* cat = addCat(world, Cat::POUNCER, -60, 0);
+	runFor(world, Cat::SPAWN_SECONDS + 0.02f);
+	CHECK(cat->active());
+
+	TF::elapsed = 0.02f;
+	bool crouched = false;
+	bool leapt = false;
+	for(int i = 0; i < 100 && !leapt; i++)
+	{
+		world->update();
+		crouched = crouched || cat->pounce == Cat::CROUCHING;
+		leapt = cat->pounce == Cat::LEAPING;
+	}
+	CHECK(crouched && leapt);
+	CHECK(cat->lastCrouchSeconds >= Cat::CROUCH_SECONDS);
+	CHECK(cat->lastCrouchSeconds < Cat::CROUCH_SECONDS + 0.05f);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_zoomie_closes_in_on_the_kid)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	world->player->active = false;
+	Cat* cat = addCat(world, Cat::ZOOMIE, 80, -30);
+	runFor(world, Cat::SPAWN_SECONDS + 0.02f);
+	float before = SDL_sqrtf((cat->x - world->player->x) * (cat->x - world->player->x) + (cat->y - world->player->y) * (cat->y - world->player->y));
+	runFor(world, 1.0f);
+	float after = SDL_sqrtf((cat->x - world->player->x) * (cat->x - world->player->x) + (cat->y - world->player->y) * (cat->y - world->player->y));
+	CHECK(after < before - 20);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	unsigned int seed = 1;
+	world->newGame(seed);
+	while(!world->level.maze.hasDoor(world->level.maze.start, RIGHT) ||
+		  world->level.maze.neighbour(world->level.maze.start, RIGHT) == world->level.maze.locked)
+		world->newGame(++seed);
+	CHECK(world->cats.empty());
+
+	Room* start = world->room;
+	Room* east = world->level.roomAt(world->level.maze.neighbour(world->level.maze.start, RIGHT));
+	world->player->x = start->x + (Room::COLUMNS - 1) * Room::TILE + 2;
+	world->player->y = start->y + Room::HEIGHT / 2 + 4;
+	TF::elapsed = 0.05f;
+	world->update();
+
+	size_t points = 0;
+	for(int r = 0; r < RoomTemplates::ROWS; r++)
+		for(int c = 0; c < RoomTemplates::COLUMNS; c++)
+			points += east->layout->at(c, r) == RoomTemplates::SPAWN;
+	CHECK(points > 0);
+	CHECK(!world->cats.empty() && world->cats.size() <= points);
+	for(size_t i = 0; i < world->cats.size(); i++)
+		CHECK(!world->cats[i]->active());
 	delete engine;
 }

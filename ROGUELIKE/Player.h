@@ -12,9 +12,11 @@ Copyright (C) 2013 Danny Calleri
 
 #include "Maze.h"
 #include "ToastEntity.h"
+#include <vector>
 
 namespace Toast
 {
+	class Cat;
 	class Emitter;
 	class Room;
 	class Spritemap;
@@ -37,11 +39,11 @@ namespace Toast
 
 		Room* room;
 		Emitter* effects;
+		const std::vector<Cat*>* cats;
 		Direction facing;
 		int shots;
 
 	private:
-		void moveAxis(float& position, float delta);
 		void animate(float dx, float dy);
 		// (aimX, aimY) is the direction from the mouth; true while the player fires
 		bool aim(float& aimX, float& aimY);

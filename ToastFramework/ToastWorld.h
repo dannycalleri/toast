@@ -22,7 +22,7 @@ namespace Toast
 		virtual ~World();
 
 		virtual void update();
-		void render();
+		virtual void render();
 
 		void add(Entity* e);
 

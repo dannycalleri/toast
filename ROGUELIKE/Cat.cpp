@@ -1,0 +1,215 @@
+/*
+=========================================================================
+
+Cat Crypt, a Toast sample game
+Copyright (C) 2013 Danny Calleri
+
+==========================================================================
+*/
+
+#include "Cat.h"
+#include "Effects.h"
+#include "Movement.h"
+#include "Player.h"
+#include "ScreenShake.h"
+#include "TF.h"
+#include "ToastEmitter.h"
+#include "ToastSpritemap.h"
+#include <cmath>
+
+namespace Toast
+{
+	const float Cat::SPAWN_SECONDS = 0.9f;
+	const float Cat::CROUCH_SECONDS = 0.4f;
+
+	namespace
+	{
+		const float ZOOMIE_SPEED = 55.0f;
+		const float STALK_SPEED = 30.0f;
+		const float LEAP_SPEED = 220.0f;
+		const float LEAP_SECONDS = 0.35f;
+		const float REST_SECONDS = 0.5f;
+		// a pouncer crouches once the kid is this close
+		const float POUNCE_RANGE = 90.0f;
+		const float SPAWN_SHAKE = 0.3f;
+		const float DIRT_INTERVAL = 0.1f;
+	}
+
+	Cat::Cat(float x, float y, Kind kind, Room* room, Player* target, Emitter* effects, ScreenShake* shake) :
+		Entity(x, y),
+		kind(kind),
+		state(SPAWNING),
+		pounce(STALKING),
+		stateTime(0.0f),
+		lastCrouchSeconds(0.0f),
+		room(room),
+		target(target),
+		effects(effects),
+		shake(shake),
+		age(0.0f),
+		dirtTimer(0.0f),
+		leapX(x),
+		leapY(y)
+	{
+		Spritemap* shadow = new Spritemap("assets/fx.png", 8, 8);
+		int shadowFrame[1] = {Effects::SHADOW};
+		shadow->add("still", shadowFrame, 1);
+		shadow->play("still");
+		shadow->originX = 4;
+		shadow->originY = 7;
+		shadow->alpha = 0.5f;
+		addGraphic(shadow);
+
+		crack = new Spritemap("assets/spawn.png", 16, 16);
+		int crackFrames[4] = {0, 1, 2, 3};
+		crack->add("open", crackFrames, 4, (unsigned int)(4 / SPAWN_SECONDS + 0.5f), false);
+		crack->play("open");
+		crack->originX = 8;
+		crack->originY = 10;
+		addGraphic(crack);
+
+		sprite = new Spritemap(kind == ZOOMIE ? "assets/cat.png" : "assets/cat_pouncer.png", 16, 16);
+		int idle[2] = {0, 1};
+		int run[2] = {2, 3};
+		int crouchFrame[1] = {4};
+		int pounceFrame[1] = {5};
+		sprite->add("idle", idle, 2, 3);
+		sprite->add("run", run, 2, 10);
+		sprite->add("crouch", crouchFrame, 1);
+		sprite->add("pounce", pounceFrame, 1);
+		sprite->play("idle");
+		sprite->originX = 8;
+		sprite->originY = 15;
+		sprite->visible = false;
+		// listed after the shadow and the crack, so it draws over them
+		addGraphic(sprite);
+
+		setHitbox(10, 6, 5, 6);
+	}
+
+	bool Cat::bodyContains(float px, float py) const
+	{
+		return px >= x - 7 && px <= x + 7 && py >= y - 12 && py <= y;
+	}
+
+	void Cat::spawn()
+	{
+		dirtTimer -= TF::elapsed;
+		if(effects && dirtTimer <= 0)
+		{
+			effects->emit(Effects::DIRT, x, y - 2);
+			dirtTimer = DIRT_INTERVAL;
+		}
+
+		if(stateTime < SPAWN_SECONDS)
+			return;
+
+		state = ACTIVE;
+		stateTime = 0;
+		crack->visible = false;
+		sprite->visible = true;
+		if(effects)
+		{
+			for(int i = 0; i < 8; i++)
+				effects->emit(Effects::DIRT_BURST, x, y - 4);
+		}
+		if(shake)
+			shake->add(SPAWN_SHAKE);
+	}
+
+	void Cat::walkToward(float targetX, float targetY, float speed)
+	{
+		float dx = targetX - x;
+		float dy = targetY - y;
+		float length = std::sqrt(dx * dx + dy * dy);
+		if(length < 1.0f)
+			return;
+		Movement::move(*this, room, dx / length * speed * TF::elapsed, dy / length * speed * TF::elapsed);
+		sprite->flipped = dx > 0;
+	}
+
+	void Cat::zoom()
+	{
+		float dx = target->x - x;
+		float dy = target->y - y;
+		float length = std::sqrt(dx * dx + dy * dy);
+		if(length < 1.0f)
+			return;
+		dx /= length;
+		dy /= length;
+
+		// sideways wobble: the zig-zag of a cat that cannot run straight
+		float wobble = std::sin(age * 9.0f) * 0.9f;
+		float moveX = dx - dy * wobble;
+		float moveY = dy + dx * wobble;
+		float moveLength = std::sqrt(moveX * moveX + moveY * moveY);
+		Movement::move(*this, room, moveX / moveLength * ZOOMIE_SPEED * TF::elapsed, moveY / moveLength * ZOOMIE_SPEED * TF::elapsed);
+		sprite->flipped = dx > 0;
+		sprite->play("run");
+	}
+
+	void Cat::setPounce(Pounce next)
+	{
+		pounce = next;
+		stateTime = 0;
+	}
+
+	void Cat::stalkAndPounce()
+	{
+		float dx = target->x - x;
+		float dy = target->y - y;
+		float distance = std::sqrt(dx * dx + dy * dy);
+
+		switch(pounce)
+		{
+		case STALKING:
+			walkToward(target->x, target->y, STALK_SPEED);
+			sprite->play("run");
+			if(distance < POUNCE_RANGE)
+			{
+				leapX = target->x;
+				leapY = target->y;
+				setPounce(CROUCHING);
+			}
+			break;
+
+		case CROUCHING:
+			sprite->play("crouch");
+			sprite->flipped = leapX > x;
+			if(stateTime >= CROUCH_SECONDS)
+			{
+				lastCrouchSeconds = stateTime;
+				setPounce(LEAPING);
+			}
+			break;
+
+		case LEAPING:
+			sprite->play("pounce");
+			walkToward(leapX, leapY, LEAP_SPEED);
+			if(stateTime >= LEAP_SECONDS)
+				setPounce(RESTING);
+			break;
+
+		case RESTING:
+			sprite->play("idle");
+			if(stateTime >= REST_SECONDS)
+				setPounce(STALKING);
+			break;
+		}
+	}
+
+	void Cat::update()
+	{
+		age += TF::elapsed;
+		stateTime += TF::elapsed;
+
+		if(state == SPAWNING)
+			spawn();
+		else if(target && kind == ZOOMIE)
+			zoom();
+		else if(target)
+			stalkAndPounce();
+
+		Entity::update();
+	}
+}

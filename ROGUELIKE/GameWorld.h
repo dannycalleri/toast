@@ -13,9 +13,12 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastCommon.h"
 #include "ToastWorld.h"
 #include "Level.h"
+#include "ScreenShake.h"
+#include <vector>
 
 namespace Toast
 {
+	class Cat;
 	class Emitter;
 	class Player;
 	class Room;
@@ -30,6 +33,7 @@ namespace Toast
 		virtual ~GameWorld();
 
 		virtual void update();
+		virtual void render();
 
 		void newGame(unsigned int seed);
 		bool sliding() const { return slideTime >= 0; }
@@ -38,12 +42,17 @@ namespace Toast
 		Player* player;
 		Room* room;
 		Emitter* effects;
+		ScreenShake shake;
+		std::vector<Cat*> cats;
 
 	private:
 		void showRoom(Room* room);
 		void enterNextRoom(Direction d);
 		// the door of the current room the player stands in, or -1
 		int doorUnderPlayer();
+		void spawnCats(Room* room);
+
+		std::vector<bool> visited;
 
 		Canvas* hudBand;
 		float slideTime;

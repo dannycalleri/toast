@@ -74,14 +74,20 @@ TOAST_TEST(art_committed_sheets_match_their_sources)
 		CHECK(PixelArt::loadSheet(entry.path().string(), palette, sheet, error));
 		CHECK(PixelArt::writeSheet(sheet, palette, outDir.string(), error));
 
-		SDL_Surface* fresh = loadRGBA((outDir / (sheet.name + ".png")).string());
-		SDL_Surface* committed = loadRGBA(ASSETS_DIR + sheet.name + ".png");
-		bool same = samePixels(fresh, committed);
-		if(!same)
-			SDL_Log("%s.png differs from its source; run: cmake --build build --target roguelike_art", sheet.name.c_str());
-		SDL_DestroySurface(fresh);
-		SDL_DestroySurface(committed);
-		CHECK(same);
+		std::vector<std::string> names(1, sheet.name);
+		for(size_t v = 0; v < sheet.variants.size(); v++)
+			names.push_back(sheet.variants[v].name);
+		for(size_t n = 0; n < names.size(); n++)
+		{
+			SDL_Surface* fresh = loadRGBA((outDir / (names[n] + ".png")).string());
+			SDL_Surface* committed = loadRGBA(ASSETS_DIR + names[n] + ".png");
+			bool same = samePixels(fresh, committed);
+			if(!same)
+				SDL_Log("%s.png differs from its source; run: cmake --build build --target roguelike_art", names[n].c_str());
+			SDL_DestroySurface(fresh);
+			SDL_DestroySurface(committed);
+			CHECK(same);
+		}
 		sheets++;
 	}
 	std::filesystem::remove_all(outDir);
@@ -141,4 +147,34 @@ TOAST_TEST(art_palette_rejects_bad_colours_and_repeated_keys)
 		CHECK(error.find(path + ":") == 0);
 		std::filesystem::remove(path);
 	}
+}
+
+TOAST_TEST(art_variant_redraws_the_sheet_with_swapped_keys)
+{
+	PixelArt::Palette palette = loadPalette();
+	std::string path = writeTemp("toast-variant-art.txt",
+		"size 2 1\nflash\nvariant grey o=d\nframe a\nok\n");
+
+	PixelArt::Sheet sheet;
+	std::string error;
+	CHECK(PixelArt::loadSheet(path, palette, sheet, error));
+	CHECK(sheet.variants.size() == 1 && sheet.variants[0].name == "grey");
+
+	SDL_Surface* swapped = PixelArt::render(sheet, palette, sheet.variants[0].swaps);
+	Uint8 r, g, b, a;
+	SDL_ReadSurfacePixel(swapped, 0, 0, &r, &g, &b, &a);
+	SDL_Color grey = palette.colours['d'];
+	CHECK(r == grey.r && g == grey.g && b == grey.b);
+	// keys that are not swapped keep their colour, and flash frames stay white
+	SDL_ReadSurfacePixel(swapped, 1, 0, &r, &g, &b, &a);
+	CHECK(r == palette.colours['k'].r && g == palette.colours['k'].g);
+	SDL_ReadSurfacePixel(swapped, 2, 0, &r, &g, &b, &a);
+	CHECK(r == 255 && g == 255 && b == 255);
+	SDL_DestroySurface(swapped);
+
+	std::string bad = writeTemp("toast-bad-variant.txt", "size 1 1\nvariant grey o=Z\nframe a\no\n");
+	CHECK(!PixelArt::loadSheet(bad, palette, sheet, error));
+	CHECK(error.find(bad + ":2: bad swap") == 0);
+	std::filesystem::remove(path);
+	std::filesystem::remove(bad);
 }

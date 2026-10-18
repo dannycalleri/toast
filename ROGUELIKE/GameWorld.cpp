@@ -8,15 +8,18 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "GameWorld.h"
+#include "Cat.h"
 #include "Effects.h"
 #include "Player.h"
 #include "Room.h"
+#include "RoomTemplates.h"
 #include "TF.h"
 #include "ToastCanvas.h"
 #include "ToastEmitter.h"
 #include "ToastEngine.h"
 #include "ToastInput.h"
 #include "ToastRandom.h"
+#include <cmath>
 
 namespace Toast
 {
@@ -51,6 +54,7 @@ namespace Toast
 		// everything in the world belongs to the old maze; bullets point at its rooms
 		removeAll();
 		level.forgetRooms();
+		cats.clear();
 		player = NULL;
 		room = NULL;
 		slideTime = -1;
@@ -58,10 +62,13 @@ namespace Toast
 		if(!level.build(this, seed))
 			return;
 
+		visited.assign(level.maze.width * level.maze.height, false);
+		visited[level.maze.start] = true;
 		room = level.startRoom();
 		player = new Player(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2 + Room::TILE * 2);
 		player->room = room;
 		player->effects = effects;
+		player->cats = &cats;
 		add(player);
 		showRoom(room);
 	}
@@ -118,6 +125,49 @@ namespace Toast
 		case RIGHT: player->x = next->x + 2 * Room::TILE + player->originX; player->y = middleY; break;
 		}
 		player->Entity::update();
+
+		int cell = next->row * level.maze.width + next->column;
+		if(!visited[cell])
+		{
+			visited[cell] = true;
+			spawnCats(next);
+		}
+	}
+
+	void GameWorld::spawnCats(Room* where)
+	{
+		int cell = where->row * level.maze.width + where->column;
+		if(cell == level.maze.locked)
+			return;
+
+		for(int r = 0; r < RoomTemplates::ROWS; r++)
+		{
+			for(int c = 0; c < RoomTemplates::COLUMNS; c++)
+			{
+				if(where->layout->at(c, r) != RoomTemplates::SPAWN)
+					continue;
+				float x = where->x + (c + 1) * Room::TILE + Room::TILE / 2;
+				float y = where->y + (r + 1) * Room::TILE + Room::TILE - 4;
+				Cat::Kind kind = TF::random() < 0.5f ? Cat::ZOOMIE : Cat::POUNCER;
+				Cat* cat = new Cat(x, y, kind, where, player, effects, &shake);
+				cats.push_back(cat);
+				add(cat);
+			}
+		}
+	}
+
+	void GameWorld::render()
+	{
+		float shakeX, shakeY;
+		shake.offset(shakeX, shakeY);
+		// whole pixels, so the pixel art stays sharp while it shakes
+		shakeX = std::round(shakeX);
+		shakeY = std::round(shakeY);
+		TF::camera->x += shakeX;
+		TF::camera->y += shakeY;
+		World::render();
+		TF::camera->x -= shakeX;
+		TF::camera->y -= shakeY;
 	}
 
 	void GameWorld::update()
@@ -146,6 +196,7 @@ namespace Toast
 			return;
 		}
 
+		shake.update(TF::elapsed);
 		World::update();
 
 		int door = doorUnderPlayer();
