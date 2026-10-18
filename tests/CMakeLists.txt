@@ -26,7 +26,7 @@ foreach(name
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()
 
-add_executable(roguelike_tests test_main.cpp test_roguelike.cpp)
+add_executable(roguelike_tests test_main.cpp test_maze.cpp test_roguelike.cpp)
 target_link_libraries(roguelike_tests PRIVATE roguelike_game)
 toast_warnings(roguelike_tests)
 toast_copy_assets(roguelike_tests ${ROGUELIKE_ASSETS})
@@ -36,7 +36,15 @@ foreach(name
         roguelike_missing_room_file_gives_an_empty_room
         roguelike_dungeons_generate_without_overlapping_rooms
         roguelike_room_copies_do_not_reread_the_room_file
-        roguelike_generation_gives_up_when_no_room_can_be_placed)
+        roguelike_generation_gives_up_when_no_room_can_be_placed
+        maze_has_the_requested_rooms_all_reachable
+        maze_doors_are_symmetric_and_lead_to_rooms
+        maze_same_seed_gives_the_same_maze
+        maze_locked_room_is_the_farthest_dead_end
+        maze_extra_doors_avoid_the_start_and_the_locked_room
+        maze_generation_takes_at_most_two_steps_per_room
+        maze_of_ten_thousand_rooms_is_fast
+        maze_invalid_sizes_give_an_empty_maze)
     add_test(NAME ${name} COMMAND roguelike_tests ${name})
     # dungeon generation used to retry forever; a hang must fail, not block
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
