@@ -23,6 +23,7 @@ namespace Toast
 		const char* const DIRT_BURST = "dirt burst";
 		const char* const FUR = "fur";
 		const char* const GREY_FUR_TUFT = "grey fur";
+		const char* const SPARKLE = "sparkle";
 
 		Emitter* create()
 		{
@@ -66,6 +67,10 @@ namespace Toast
 				effects->setGravity(furTypes[i], 90);
 				effects->setAlpha(furTypes[i], 1, 0);
 			}
+			effects->newType(SPARKLE, std::vector<int>(1, BIG_SPARK));
+			effects->setMotion(SPARKLE, 0, 8, 0.6f, FULL_TURN, 16, 0.4f);
+			effects->setScale(SPARKLE, 1, 0.2f);
+			effects->setAlpha(SPARKLE, 1, 0.3f);
 			return effects;
 		}
 	}

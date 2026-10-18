@@ -71,6 +71,9 @@ foreach(name
         roguelike_last_half_heart_ends_the_game_and_r_restarts
         roguelike_cat_dies_on_its_third_hit_in_a_burst_of_fur
         roguelike_cat_finds_its_way_around_a_wall
+        roguelike_level_counts_the_cats_of_every_room_before_they_spawn
+        roguelike_clearing_a_room_while_others_have_cats_gives_no_key
+        roguelike_last_cat_of_the_level_drops_the_key
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze

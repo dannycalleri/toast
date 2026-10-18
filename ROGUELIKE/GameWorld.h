@@ -21,6 +21,7 @@ Copyright (C) 2013 Danny Calleri
 namespace Toast
 {
 	class Cat;
+	class Key;
 	class Emitter;
 	class Player;
 	class Room;
@@ -57,6 +58,9 @@ namespace Toast
 		Emitter* effects;
 		ScreenShake shake;
 		std::vector<Cat*> cats;
+		Key* key;
+		bool hasKey;
+		int catsLeft;
 		float freezeTime;
 
 	private:
@@ -72,6 +76,12 @@ namespace Toast
 		Text* centredText(const std::string& line, Font* font, float y);
 
 		std::vector<RoomState> roomStates;
+		// per cell: how many cats the room spawns when the kid first enters
+		std::vector<int> roomCats;
+
+		int spawnPoints(const Room* room) const;
+		void dropKey(float x, float y);
+		void takeKey();
 
 		Canvas* hudBand;
 		Font* bigFont;

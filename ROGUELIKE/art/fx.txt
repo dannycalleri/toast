@@ -1,5 +1,6 @@
 ; Effects, 8x8 each: 0 bullet, 1 spit drop, 2 spark, 3 big spark,
-; 4 dust, 5 big dust, 6 impact ring, 7 shadow, 8 orange fur, 9 grey fur.
+; 4 dust, 5 big dust, 6 impact ring, 7 shadow, 8 orange fur, 9 grey fur,
+; 10 heart, 11 half heart, 12 empty heart, 13 key.
 size 8 8
 columns 8
 
@@ -101,4 +102,44 @@ frame grey fur
 ..dsdd..
 ...dd.d.
 ....d...
+........
+
+frame heart
+........
+.kk.kk..
+krrkrrk.
+krwrrrk.
+krrrrrk.
+.krrrk..
+..krk...
+...k....
+
+frame half heart
+........
+.kk.kk..
+krrkeek.
+krwreek.
+krrreek.
+.krrek..
+..krk...
+...k....
+
+frame empty heart
+........
+.kk.kk..
+keekeek.
+keeeeek.
+keeeeek.
+.keeek..
+..kek...
+...k....
+
+frame key
+........
+.kkk....
+kywyk...
+kyky.kkk
+kyyyyyyk
+.kkk.kyk
+.....k.k
 ........

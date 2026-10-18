@@ -10,6 +10,7 @@ Copyright (C) 2013 Danny Calleri
 #include "GameWorld.h"
 #include "Cat.h"
 #include "Effects.h"
+#include "Key.h"
 #include "Player.h"
 #include "Room.h"
 #include "RoomTemplates.h"
@@ -36,12 +37,16 @@ namespace Toast
 		const float HURT_SHAKE = 0.45f;
 		const int FUR_TUFTS = 10;
 		const int DOOR_DUST = 6;
+		const int KEY_SPARKLES = 16;
 	}
 
 	GameWorld::GameWorld() :
 		World(),
 		player(NULL),
 		room(NULL),
+		key(NULL),
+		hasKey(false),
+		catsLeft(0),
 		freezeTime(0.0f),
 		slideTime(-1)
 	{
@@ -90,6 +95,8 @@ namespace Toast
 		removeAll();
 		level.forgetRooms();
 		cats.clear();
+		key = NULL;
+		hasKey = false;
 		freezeTime = 0;
 		player = NULL;
 		room = NULL;
@@ -101,6 +108,20 @@ namespace Toast
 		roomStates.assign(level.maze.width * level.maze.height, UNVISITED);
 		roomStates[level.maze.start] = CLEARED;
 		roomStates[level.maze.locked] = CLEARED;
+
+		int maxDistance = 0;
+		for(size_t i = 0; i < level.maze.rooms.size(); i++)
+			maxDistance = std::max(maxDistance, level.maze.distance[level.maze.rooms[i]]);
+		roomCats.assign(level.maze.width * level.maze.height, 0);
+		catsLeft = 0;
+		for(size_t i = 0; i < level.maze.rooms.size(); i++)
+		{
+			int cell = level.maze.rooms[i];
+			if(roomStates[cell] == CLEARED)
+				continue;
+			roomCats[cell] = catCount(level.maze.distance[cell], maxDistance, spawnPoints(level.roomAt(cell)));
+			catsLeft += roomCats[cell];
+		}
 		room = level.startRoom();
 		player = new Player(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2 + Room::TILE * 2);
 		player->room = room;
@@ -108,6 +129,8 @@ namespace Toast
 		player->cats = &cats;
 		add(player);
 		showRoom(room);
+		if(catsLeft == 0)
+			dropKey(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2);
 	}
 
 	void GameWorld::showRoom(Room* shown)
@@ -177,6 +200,15 @@ namespace Toast
 		return count < spawnPoints ? count : spawnPoints;
 	}
 
+	int GameWorld::spawnPoints(const Room* where) const
+	{
+		int points = 0;
+		for(int r = 0; r < RoomTemplates::ROWS; r++)
+			for(int c = 0; c < RoomTemplates::COLUMNS; c++)
+				points += where->layout->at(c, r) == RoomTemplates::SPAWN;
+		return points;
+	}
+
 	int GameWorld::cellOf(const Room* where) const
 	{
 		return where->row * level.maze.width + where->column;
@@ -199,14 +231,7 @@ namespace Toast
 			}
 		}
 
-		int maxDistance = 0;
-		for(size_t i = 0; i < level.maze.rooms.size(); i++)
-		{
-			int d = level.maze.distance[level.maze.rooms[i]];
-			if(d > maxDistance)
-				maxDistance = d;
-		}
-		int count = catCount(level.maze.distance[cellOf(where)], maxDistance, (int)points.size());
+		int count = roomCats[cellOf(where)];
 		if(count == 0)
 		{
 			roomStates[cellOf(where)] = CLEARED;
@@ -269,6 +294,9 @@ namespace Toast
 				freezeTime = KILL_FREEZE_SECONDS;
 				cats.erase(cats.begin() + i);
 				remove(cat);
+				catsLeft--;
+				if(catsLeft == 0)
+					dropKey(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2);
 				continue;
 			}
 
@@ -278,6 +306,23 @@ namespace Toast
 				shake.add(HURT_SHAKE);
 			i++;
 		}
+	}
+
+	void GameWorld::dropKey(float x, float y)
+	{
+		key = new Key(x, y);
+		add(key);
+		for(int i = 0; i < KEY_SPARKLES; i++)
+			effects->emit(Effects::SPARKLE, x, y - 4);
+	}
+
+	void GameWorld::takeKey()
+	{
+		for(int i = 0; i < KEY_SPARKLES; i++)
+			effects->emit(Effects::SPARKLE, key->x, key->y - 4);
+		remove(key);
+		key = NULL;
+		hasKey = true;
 	}
 
 	void GameWorld::render()
@@ -335,6 +380,9 @@ namespace Toast
 		settleCats();
 		if(cats.empty() && roomStates[cellOf(room)] == FIGHTING)
 			clear(room);
+		if(key && player->collideRect(player->x, player->y, key->x - key->originX, key->y - key->originY,
+									  (float)key->width, (float)key->height))
+			takeKey();
 		gameOverText->visible = gameOver();
 		restartText->visible = gameOver();
 		if(gameOver())

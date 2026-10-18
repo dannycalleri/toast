@@ -5,6 +5,7 @@
 #include "Bullet.h"
 #include "Cat.h"
 #include "GameWorld.h"
+#include "Key.h"
 #include "Level.h"
 #include "Player.h"
 #include "Room.h"
@@ -825,5 +826,78 @@ TOAST_TEST(roguelike_cat_finds_its_way_around_a_wall)
 		CHECK(world->cats[i]->y > room.y + 6 * Room::TILE);
 	world->cats.clear();
 	world->removeAll();
+	delete engine;
+}
+
+namespace
+{
+	void killAll(GameWorld* world)
+	{
+		runFor(world, Cat::SPAWN_SECONDS + 0.05f);
+		std::vector<Cat*> cats = world->cats;
+		for(size_t i = 0; i < cats.size(); i++)
+			for(int hit = 0; hit < Cat::HIT_POINTS; hit++)
+				cats[i]->hit(1, 0);
+		runFor(world, 0.1f);
+	}
+}
+
+TOAST_TEST(roguelike_level_counts_the_cats_of_every_room_before_they_spawn)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	int fightingRooms = (int)world->level.maze.rooms.size() - 2;
+	CHECK(world->catsLeft >= GameWorld::MIN_CATS * fightingRooms);
+	CHECK(world->catsLeft <= GameWorld::MAX_CATS * fightingRooms);
+	CHECK(world->key == NULL);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_clearing_a_room_while_others_have_cats_gives_no_key)
+{
+	Engine* engine;
+	GameWorld* world = startEastGame(engine);
+	int before = world->catsLeft;
+	walkThroughDoor(world, RIGHT);
+	world->player->health = 100;
+	int spawned = (int)world->cats.size();
+	killAll(world);
+	CHECK(world->catsLeft == before - spawned);
+	CHECK(world->catsLeft > 0);
+	CHECK(world->key == NULL);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_last_cat_of_the_level_drops_the_key)
+{
+	Engine* engine;
+	GameWorld* world = startEastGame(engine);
+	walkThroughDoor(world, RIGHT);
+	world->player->health = 100;
+	world->catsLeft = (int)world->cats.size();
+	int particles = world->effects->particleCount();
+	runFor(world, Cat::SPAWN_SECONDS + 0.05f);
+	std::vector<Cat*> cats = world->cats;
+	for(size_t i = 0; i < cats.size(); i++)
+		for(int hit = 0; hit < Cat::HIT_POINTS; hit++)
+			cats[i]->hit(1, 0);
+	TF::elapsed = 0.02f;
+	world->update();
+
+	CHECK(world->catsLeft == 0);
+	CHECK(world->key != NULL);
+	// drawn where it lies from its first frame, while the kill freeze stops updates
+	CHECK(world->freezeTime > 0);
+	CHECK(world->key->graphic->point->x == world->key->x && world->key->graphic->point->y == world->key->y);
+	CHECK(world->key->x == world->room->x + Room::WIDTH / 2);
+	CHECK(world->key->y == world->room->y + Room::HEIGHT / 2);
+	CHECK(world->effects->particleCount() > particles);
+	CHECK(!world->hasKey);
+
+	world->player->x = world->key->x;
+	world->player->y = world->key->y;
+	runFor(world, 0.1f);
+	CHECK(world->hasKey);
+	CHECK(world->key == NULL);
 	delete engine;
 }
