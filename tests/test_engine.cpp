@@ -1,5 +1,6 @@
 #include "ToastTest.h"
 #include "HeadlessVideo.h"
+#include "ReadPixel.h"
 #include "Toast.h"
 #include "ToastCanvas.h"
 #include "ToastFont.h"
@@ -31,15 +32,7 @@ namespace
 
 	SDL_Color pixelAt(int x, int y)
 	{
-		SDL_Color color = {0, 0, 0, 0};
-		SDL_Rect rect = {x, y, 1, 1};
-		SDL_Surface* surface = SDL_RenderReadPixels(TF::engine->renderer, &rect);
-		if(surface)
-		{
-			SDL_ReadSurfacePixel(surface, 0, 0, &color.r, &color.g, &color.b, &color.a);
-			SDL_DestroySurface(surface);
-		}
-		return color;
+		return readGamePixel(TF::engine->renderer, x, y);
 	}
 
 	void pushEvent(SDL_Event ev)
@@ -220,4 +213,26 @@ TOAST_TEST(engine_frame_time_is_capped)
 	const Uint64 ms = SDL_NS_PER_MS;
 	CHECK(SDL_fabs(Engine::frameSeconds(1000 * ms, 1016 * ms) - 0.016) < 1e-9);
 	CHECK(Engine::frameSeconds(0, 5000 * ms) == Engine::MAX_FRAME_SECONDS);
+}
+
+TOAST_TEST(engine_window_opens_at_the_largest_whole_scale_that_fits)
+{
+	int width, height;
+	// 4x would need 960 of the 864 usable rows
+	Engine::windowSize(320, 240, 1920, 1080, width, height);
+	CHECK(width == 960 && height == 720);
+
+	Engine::windowSize(320, 240, 2560, 1440, width, height);
+	CHECK(width == 1280 && height == 960);
+
+	Engine::windowSize(1280, 720, 1920, 1080, width, height);
+	CHECK(width == 1280 && height == 720);
+
+	// exactly 80%: the multiple still fits
+	Engine::windowSize(320, 240, 800, 600, width, height);
+	CHECK(width == 640 && height == 480);
+
+	// smaller than 1x: shrink to 80% and keep the aspect ratio, as before
+	Engine::windowSize(1280, 720, 1000, 1000, width, height);
+	CHECK(width == 800 && height == 450);
 }

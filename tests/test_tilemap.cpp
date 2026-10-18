@@ -1,5 +1,6 @@
 #include "ToastTest.h"
 #include "HeadlessVideo.h"
+#include "ReadPixel.h"
 #include "Toast.h"
 #include "ToastTexture.h"
 #include "ToastTilemap.h"
@@ -49,12 +50,7 @@ namespace
 		Graphics::Clear(0, 0, 0);
 		TF::world->render();
 
-		SDL_Color color = {0, 0, 0, 0};
-		SDL_Rect rect = {x, y, 1, 1};
-		SDL_Surface* surface = SDL_RenderReadPixels(TF::engine->renderer, &rect);
-		SDL_ReadSurfacePixel(surface, 0, 0, &color.r, &color.g, &color.b, &color.a);
-		SDL_DestroySurface(surface);
-		return color;
+		return readGamePixel(TF::engine->renderer, x, y);
 	}
 }
 

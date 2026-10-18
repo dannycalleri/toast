@@ -21,7 +21,8 @@ foreach(name
         engine_text_is_drawn_inside_its_canvas
         engine_mouse_is_mapped_through_letterbox
         engine_key_pressed_once_down_until_released
-        engine_frame_time_is_capped)
+        engine_frame_time_is_capped
+        engine_window_opens_at_the_largest_whole_scale_that_fits)
     add_test(NAME ${name} COMMAND toast_tests ${name})
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()
