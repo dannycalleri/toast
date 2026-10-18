@@ -115,6 +115,23 @@ target_link_libraries(roguelike PRIVATE roguelike_game)
 toast_warnings(roguelike)
 toast_copy_assets(roguelike ${ROGUELIKE_ASSETS})
 
+# ASCII art sources -> PNG sheets. The PNGs are committed, so only an art change
+# needs this: cmake --build build --target roguelike_art
+add_library(pixelart_lib STATIC tools/PixelArt.cpp)
+target_include_directories(pixelart_lib PUBLIC tools)
+target_link_libraries(pixelart_lib PUBLIC SDL3::SDL3 SDL3_image::SDL3_image)
+toast_warnings(pixelart_lib)
+
+add_executable(pixelart EXCLUDE_FROM_ALL tools/pixelart_main.cpp)
+target_link_libraries(pixelart PRIVATE pixelart_lib)
+toast_warnings(pixelart)
+
+file(GLOB ROGUELIKE_ART_SHEETS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/*.txt)
+list(REMOVE_ITEM ROGUELIKE_ART_SHEETS ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/palette.txt)
+add_custom_target(roguelike_art
+    COMMAND pixelart ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets
+        ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/palette.txt ${ROGUELIKE_ART_SHEETS})
+
 # --- tests -------------------------------------------------------------------
 
 if(TOAST_BUILD_TESTS)

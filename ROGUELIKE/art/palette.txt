@@ -1,0 +1,18 @@
+; Sweetie 16 by GrafxKid: every sheet uses only these colours.
+; "." is transparent in every sheet.
+k #1a1c2c
+p #5d275d
+r #b13e53
+o #ef7d57
+y #ffcd75
+l #a7f070
+g #38b764
+t #257179
+n #29366f
+b #3b5dc9
+c #41a6f6
+a #73eff7
+w #f4f4f4
+s #94b0c2
+d #566c86
+e #333c57

@@ -26,8 +26,9 @@ foreach(name
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()
 
-add_executable(roguelike_tests test_main.cpp test_maze.cpp test_roguelike.cpp)
-target_link_libraries(roguelike_tests PRIVATE roguelike_game)
+add_executable(roguelike_tests test_main.cpp test_art.cpp test_maze.cpp test_roguelike.cpp)
+target_link_libraries(roguelike_tests PRIVATE roguelike_game pixelart_lib)
+target_compile_definitions(roguelike_tests PRIVATE TOAST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 toast_warnings(roguelike_tests)
 toast_copy_assets(roguelike_tests ${ROGUELIKE_ASSETS})
 
@@ -44,7 +45,11 @@ foreach(name
         maze_extra_doors_avoid_the_start_and_the_locked_room
         maze_generation_takes_at_most_two_steps_per_room
         maze_of_ten_thousand_rooms_is_fast
-        maze_invalid_sizes_give_an_empty_maze)
+        maze_invalid_sizes_give_an_empty_maze
+        art_committed_sheets_match_their_sources
+        art_unknown_colour_key_is_reported_with_its_line
+        art_flash_frames_are_white_copies
+        art_palette_rejects_bad_colours_and_repeated_keys)
     add_test(NAME ${name} COMMAND roguelike_tests ${name})
     # dungeon generation used to retry forever; a hang must fail, not block
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
