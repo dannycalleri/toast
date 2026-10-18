@@ -1,4 +1,4 @@
-add_executable(toast_tests test_main.cpp test_input.cpp test_tf.cpp test_grid.cpp test_tilemap.cpp test_engine.cpp)
+add_executable(toast_tests test_main.cpp test_emitter.cpp test_input.cpp test_tf.cpp test_grid.cpp test_tilemap.cpp test_engine.cpp)
 target_link_libraries(toast_tests PRIVATE toast)
 toast_warnings(toast_tests)
 toast_copy_assets(toast_tests ${DEMO_ASSETS})
@@ -22,7 +22,13 @@ foreach(name
         engine_mouse_is_mapped_through_letterbox
         engine_key_pressed_once_down_until_released
         engine_frame_time_is_capped
-        engine_window_opens_at_the_largest_whole_scale_that_fits)
+        engine_window_opens_at_the_largest_whole_scale_that_fits
+        emitter_adds_one_particle_per_emit
+        emitter_particles_expire_after_their_duration
+        emitter_particles_move_in_a_straight_line
+        emitter_reuses_the_slots_of_dead_particles
+        emitter_unknown_type_adds_nothing_and_logs_once
+        emitter_draws_particles_scaled_and_centred_on_their_point)
     add_test(NAME ${name} COMMAND toast_tests ${name})
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()

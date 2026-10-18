@@ -32,6 +32,8 @@ namespace Toast
 		static Texture* LoadTexture(const std::string& fileName);
 		static void Draw(Texture* source, float destX, float destY, bool flipped, float angle);
 		static void DrawRegion(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, float destX, float destY, float alpha, bool flipped, float angle);
+		static void DrawRegionScaled(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, float destX, float destY,
+									 float scaleX, float scaleY, float alpha, bool flipped, float angle);
 
 		static void DrawCanvas(Canvas* canvas, float destX, float destY);
 
