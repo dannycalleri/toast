@@ -29,6 +29,9 @@ namespace Toast
 		// removes Entity from update and rendering
 		// lists and destroys memory
 		void remove(Entity* e);
+		// removes and deletes the entity at the end of this frame's update,
+		// so an entity can remove itself (or another) while the world updates
+		void removeLater(Entity* e);
 		void removeAll();
 		void addGraphic(Graphic* graphic);
 
@@ -43,6 +46,10 @@ namespace Toast
 		std::vector<Entity*> entities;
 		std::vector<Graphic*> graphicsList;
 
+	private:
+		void removeQueued();
+
+		std::vector<Entity*> removeQueue;
 	};
 }
 

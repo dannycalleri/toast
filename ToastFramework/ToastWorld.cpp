@@ -12,6 +12,7 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastGraphic.h"
 #include "ToastEntity.h"
 
+#include <algorithm>
 #include <iostream>
 
 namespace Toast
@@ -47,6 +48,8 @@ namespace Toast
 
 	void World::remove(Entity* e)
 	{
+		removeQueue.erase(std::remove(removeQueue.begin(), removeQueue.end(), e), removeQueue.end());
+
 		for(std::vector<Entity*>::size_type i = 0; i < entities.size(); i++)
 		{
 			if(entities[i] == e)
@@ -60,8 +63,22 @@ namespace Toast
 		}
 	}
 
+	void World::removeLater(Entity* e)
+	{
+		if(std::find(removeQueue.begin(), removeQueue.end(), e) == removeQueue.end())
+			removeQueue.push_back(e);
+	}
+
+	void World::removeQueued()
+	{
+		while(!removeQueue.empty())
+			remove(removeQueue.back());
+	}
+
 	void World::removeAll()
 	{
+		removeQueue.clear();
+
 		// Destroy memory for all Entities
 		for(std::vector<Entity*>::size_type i = 0; i < entities.size(); i++)
 		{
@@ -91,6 +108,8 @@ namespace Toast
 			Graphic* g = graphicsList[i];
 			if(g->active) g->update();
 		}
+
+		removeQueued();
 	}
 
 	void World::render()

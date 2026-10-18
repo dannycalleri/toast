@@ -1,4 +1,4 @@
-add_executable(toast_tests test_main.cpp test_emitter.cpp test_input.cpp test_tf.cpp test_grid.cpp test_tilemap.cpp test_engine.cpp)
+add_executable(toast_tests test_main.cpp test_emitter.cpp test_input.cpp test_tf.cpp test_grid.cpp test_tilemap.cpp test_engine.cpp test_world.cpp)
 target_link_libraries(toast_tests PRIVATE toast)
 toast_warnings(toast_tests)
 toast_copy_assets(toast_tests ${DEMO_ASSETS})
@@ -31,7 +31,9 @@ foreach(name
         emitter_particles_move_in_a_straight_line
         emitter_reuses_the_slots_of_dead_particles
         emitter_unknown_type_adds_nothing_and_logs_once
-        emitter_draws_particles_scaled_and_centred_on_their_point)
+        emitter_draws_particles_scaled_and_centred_on_their_point
+        world_entity_can_remove_itself_during_update
+        world_queued_entity_is_deleted_once)
     add_test(NAME ${name} COMMAND toast_tests ${name})
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()
