@@ -63,6 +63,7 @@ foreach(name
         roguelike_pouncer_crouches_before_it_leaps
         roguelike_zoomie_closes_in_on_the_kid
         roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet
+        roguelike_cat_finds_its_way_around_a_wall
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze

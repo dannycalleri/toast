@@ -11,6 +11,7 @@ Copyright (C) 2013 Danny Calleri
 #include "Effects.h"
 #include "Movement.h"
 #include "Player.h"
+#include "Room.h"
 #include "ScreenShake.h"
 #include "TF.h"
 #include "ToastEmitter.h"
@@ -117,6 +118,35 @@ namespace Toast
 			shake->add(SPAWN_SHAKE);
 	}
 
+	bool Cat::clearPathTo(float targetX, float targetY) const
+	{
+		float dx = targetX - x;
+		float dy = targetY - y;
+		int steps = (int)(std::sqrt(dx * dx + dy * dy) / 4.0f);
+		for(int i = 1; i < steps; i++)
+		{
+			if(room && room->isSolidAt(x + dx * i / steps, y - 2 + dy * i / steps))
+				return false;
+		}
+		return true;
+	}
+
+	void Cat::steer(float& dx, float& dy)
+	{
+		if(clearPathTo(target->x, target->y))
+			return;
+
+		float stepX, stepY;
+		if(!room || !room->nextStep(x, y, target->x, target->y, stepX, stepY))
+			return;
+		float length = std::sqrt((stepX - x) * (stepX - x) + (stepY - y) * (stepY - y));
+		if(length > 0.5f)
+		{
+			dx = (stepX - x) / length;
+			dy = (stepY - y) / length;
+		}
+	}
+
 	void Cat::walkToward(float targetX, float targetY, float speed)
 	{
 		float dx = targetX - x;
@@ -124,8 +154,12 @@ namespace Toast
 		float length = std::sqrt(dx * dx + dy * dy);
 		if(length < 1.0f)
 			return;
-		Movement::move(*this, room, dx / length * speed * TF::elapsed, dy / length * speed * TF::elapsed);
+		dx /= length;
+		dy /= length;
 		sprite->flipped = dx > 0;
+		if(pounce == STALKING)
+			steer(dx, dy);
+		Movement::move(*this, room, dx * speed * TF::elapsed, dy * speed * TF::elapsed);
 	}
 
 	void Cat::zoom()
@@ -143,7 +177,10 @@ namespace Toast
 		float moveX = dx - dy * wobble;
 		float moveY = dy + dx * wobble;
 		float moveLength = std::sqrt(moveX * moveX + moveY * moveY);
-		Movement::move(*this, room, moveX / moveLength * ZOOMIE_SPEED * TF::elapsed, moveY / moveLength * ZOOMIE_SPEED * TF::elapsed);
+		moveX /= moveLength;
+		moveY /= moveLength;
+		steer(moveX, moveY);
+		Movement::move(*this, room, moveX * ZOOMIE_SPEED * TF::elapsed, moveY * ZOOMIE_SPEED * TF::elapsed);
 		sprite->flipped = dx > 0;
 		sprite->play("run");
 	}
@@ -165,7 +202,8 @@ namespace Toast
 		case STALKING:
 			walkToward(target->x, target->y, STALK_SPEED);
 			sprite->play("run");
-			if(distance < POUNCE_RANGE)
+			// a pounce needs a clear line, or the cat leaps into a wall
+			if(distance < POUNCE_RANGE && clearPathTo(target->x, target->y))
 			{
 				leapX = target->x;
 				leapY = target->y;

@@ -569,3 +569,32 @@ TOAST_TEST(roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet)
 		CHECK(!world->cats[i]->active());
 	delete engine;
 }
+
+TOAST_TEST(roguelike_cat_finds_its_way_around_a_wall)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	world->player->active = false;
+
+	RoomTemplate walled = layoutWith(RoomTemplates::FLOOR, 0, 0);
+	walled.rows[4] = "..##############..";
+	Room room(walled, 0, 20, 20);
+	float middleX = room.x + Room::WIDTH / 2;
+	world->player->x = middleX;
+	world->player->y = room.y + 9 * Room::TILE;
+
+	for(int k = 0; k < 2; k++)
+	{
+		Cat* cat = new Cat(middleX, room.y + 3 * Room::TILE, k == 0 ? Cat::ZOOMIE : Cat::POUNCER, &room,
+						   world->player, world->effects, &world->shake);
+		world->cats.push_back(cat);
+		world->add(cat);
+	}
+	// the pouncer stalks at 30 px/s, and the way round is about 200 px
+	runFor(world, 10.0f);
+	for(size_t i = 0; i < world->cats.size(); i++)
+		CHECK(world->cats[i]->y > room.y + 6 * Room::TILE);
+	world->cats.clear();
+	world->removeAll();
+	delete engine;
+}

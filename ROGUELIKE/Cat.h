@@ -51,6 +51,9 @@ namespace Toast
 		void zoom();
 		void stalkAndPounce();
 		void walkToward(float targetX, float targetY, float speed);
+		// (dx, dy) toward the target, or along a path when a wall is in the way
+		void steer(float& dx, float& dy);
+		bool clearPathTo(float targetX, float targetY) const;
 		void setPounce(Pounce next);
 
 		Room* room;

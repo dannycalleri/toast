@@ -51,6 +51,11 @@ namespace Toast
 		bool isSolid(int column, int row);
 		bool isSolidAt(float worldX, float worldY);
 
+		// the middle of the next tile on a shortest walk from one point to another
+		// (world coordinates, 4-way steps over tiles that are not solid);
+		// false when there is no walk
+		bool nextStep(float fromX, float fromY, float toX, float toY, float& stepX, float& stepY);
+
 		// the first of the door's two tiles, in room tile coordinates
 		static void doorTile(Direction d, int& column, int& row);
 

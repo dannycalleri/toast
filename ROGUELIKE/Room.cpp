@@ -12,6 +12,7 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastGrid.h"
 #include "ToastTilemap.h"
 #include <cmath>
+#include <vector>
 
 namespace Toast
 {
@@ -139,5 +140,55 @@ namespace Toast
 	bool Room::isSolidAt(float worldX, float worldY)
 	{
 		return isSolid((int)std::floor((worldX - x) / TILE), (int)std::floor((worldY - y) / TILE));
+	}
+
+	bool Room::nextStep(float fromX, float fromY, float toX, float toY, float& stepX, float& stepY)
+	{
+		int fromColumn = (int)std::floor((fromX - x) / TILE);
+		int fromRow = (int)std::floor((fromY - y) / TILE);
+		int toColumn = (int)std::floor((toX - x) / TILE);
+		int toRow = (int)std::floor((toY - y) / TILE);
+		if(isSolid(toColumn, toRow) || fromColumn < 0 || fromRow < 0 || fromColumn >= COLUMNS || fromRow >= ROWS)
+			return false;
+
+		// distances from the goal, so the walker only has to look at its neighbours
+		std::vector<int> distance(COLUMNS * ROWS, -1);
+		std::vector<int> queue(1, toRow * COLUMNS + toColumn);
+		distance[queue[0]] = 0;
+		const int dc[4] = {0, 0, -1, 1};
+		const int dr[4] = {-1, 1, 0, 0};
+		for(size_t head = 0; head < queue.size(); head++)
+		{
+			int c = queue[head] % COLUMNS;
+			int r = queue[head] / COLUMNS;
+			for(int i = 0; i < 4; i++)
+			{
+				int nc = c + dc[i];
+				int nr = r + dr[i];
+				if(isSolid(nc, nr) || distance[nr * COLUMNS + nc] >= 0)
+					continue;
+				distance[nr * COLUMNS + nc] = distance[queue[head]] + 1;
+				queue.push_back(nr * COLUMNS + nc);
+			}
+		}
+
+		int here = fromRow * COLUMNS + fromColumn;
+		int best = -1;
+		for(int i = 0; i < 4; i++)
+		{
+			int nc = fromColumn + dc[i];
+			int nr = fromRow + dr[i];
+			if(nc < 0 || nr < 0 || nc >= COLUMNS || nr >= ROWS)
+				continue;
+			int d = distance[nr * COLUMNS + nc];
+			if(d >= 0 && (best < 0 || d < distance[best]) && (distance[here] < 0 || d < distance[here]))
+				best = nr * COLUMNS + nc;
+		}
+		if(best < 0)
+			return false;
+
+		stepX = x + (best % COLUMNS) * TILE + TILE / 2;
+		stepY = y + (best / COLUMNS) * TILE + TILE / 2;
+		return true;
 	}
 }
