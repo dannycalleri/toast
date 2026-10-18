@@ -29,6 +29,9 @@ namespace Toast
 		static const float SPEED;
 		static const float FIRE_COOLDOWN;
 		static const float MOUTH_SECONDS;
+		// in half hearts
+		static const int MAX_HEALTH = 6;
+		static const float INVULNERABLE_SECONDS;
 
 		Player(float x, float y);
 
@@ -36,12 +39,17 @@ namespace Toast
 
 		void move(float dx, float dy);
 		bool overlapsSolid(float atX, float atY);
+		// a touch from something at (fromX, fromY); false while invulnerable
+		bool hurt(float fromX, float fromY);
+		bool alive() const { return health > 0; }
 
 		Room* room;
 		Emitter* effects;
 		const std::vector<Cat*>* cats;
 		Direction facing;
 		int shots;
+		int health;
+		float invulnerableTime;
 
 	private:
 		void animate(float dx, float dy);

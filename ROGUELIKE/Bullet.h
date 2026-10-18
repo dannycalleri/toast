@@ -37,7 +37,7 @@ namespace Toast
 
 	private:
 		void burst(const char* particle, int count);
-		bool hitsCat() const;
+		Cat* catHit() const;
 		void breakApart();
 
 		Room* room;

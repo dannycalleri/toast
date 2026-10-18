@@ -24,6 +24,7 @@ namespace Toast
 	const float Player::SPEED = 80.0f;
 	const float Player::FIRE_COOLDOWN = 0.25f;
 	const float Player::MOUTH_SECONDS = 0.1f;
+	const float Player::INVULNERABLE_SECONDS = 1.0f;
 
 	namespace
 	{
@@ -33,6 +34,8 @@ namespace Toast
 		// from the feet
 		const float MOUTH_Y = -6.0f;
 		const float MOUTH_SIDE_X = 2.0f;
+		const float KNOCKBACK = 12.0f;
+		const float BLINK_SECONDS = 0.08f;
 
 		Direction dominant(float dx, float dy)
 		{
@@ -59,6 +62,8 @@ namespace Toast
 		cats(NULL),
 		facing(DOWN),
 		shots(0),
+		health(MAX_HEALTH),
+		invulnerableTime(0.0f),
 		cooldown(0.0f),
 		mouthTime(0.0f)
 	{
@@ -86,6 +91,21 @@ namespace Toast
 	bool Player::overlapsSolid(float atX, float atY)
 	{
 		return Movement::overlapsSolid(*this, room, atX, atY);
+	}
+
+	bool Player::hurt(float fromX, float fromY)
+	{
+		if(invulnerableTime > 0 || !alive())
+			return false;
+
+		health--;
+		invulnerableTime = INVULNERABLE_SECONDS;
+		float dx = x - fromX;
+		float dy = y - fromY;
+		float length = std::sqrt(dx * dx + dy * dy);
+		if(length > 0)
+			move(dx / length * KNOCKBACK, dy / length * KNOCKBACK);
+		return true;
 	}
 
 	void Player::move(float dx, float dy)
@@ -176,6 +196,9 @@ namespace Toast
 		}
 
 		animate(dx, dy);
+
+		invulnerableTime -= TF::elapsed;
+		sprite->visible = invulnerableTime <= 0 || (int)(invulnerableTime / BLINK_SECONDS) % 2 == 0;
 		Entity::update();
 	}
 }

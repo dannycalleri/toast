@@ -63,6 +63,10 @@ foreach(name
         roguelike_pouncer_crouches_before_it_leaps
         roguelike_zoomie_closes_in_on_the_kid
         roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet
+        roguelike_kid_is_hurt_only_by_active_cats
+        roguelike_two_touches_within_a_second_cost_half_a_heart_once
+        roguelike_last_half_heart_ends_the_game_and_r_restarts
+        roguelike_cat_dies_on_its_third_hit_in_a_burst_of_fur
         roguelike_cat_finds_its_way_around_a_wall
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms

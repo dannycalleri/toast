@@ -16,6 +16,8 @@ Copyright (C) 2013 Danny Calleri
 #include "TF.h"
 #include "ToastCanvas.h"
 #include "ToastEmitter.h"
+#include "ToastFont.h"
+#include "ToastText.h"
 #include "ToastEngine.h"
 #include "ToastInput.h"
 #include "ToastRandom.h"
@@ -24,11 +26,20 @@ Copyright (C) 2013 Danny Calleri
 namespace Toast
 {
 	const float GameWorld::SLIDE_SECONDS = 0.3f;
+	const float GameWorld::KILL_FREEZE_SECONDS = 0.04f;
+
+	namespace
+	{
+		const float KILL_SHAKE = 0.35f;
+		const float HURT_SHAKE = 0.45f;
+		const int FUR_TUFTS = 10;
+	}
 
 	GameWorld::GameWorld() :
 		World(),
 		player(NULL),
 		room(NULL),
+		freezeTime(0.0f),
 		slideTime(-1)
 	{
 		// added before the HUD band, so particles never draw over the HUD
@@ -41,12 +52,33 @@ namespace Toast
 		hudBand->scrollY = 0;
 		addGraphic(hudBand);
 
+		bigFont = new Font("assets/pixelfont.TTF", 24);
+		smallFont = new Font("assets/pixelfont.TTF", 8);
+		gameOverText = centredText("GAME OVER", bigFont, 100);
+		restartText = centredText("PRESS R TO TRY A NEW CRYPT", smallFont, 136);
+
 		if(level.loadTemplates())
 			newGame(TF::engine->random->Random(0x7fffffff));
 	}
 
 	GameWorld::~GameWorld()
 	{
+		delete bigFont;
+		delete smallFont;
+	}
+
+	Text* GameWorld::centredText(const std::string& line, Font* font, float y)
+	{
+		Text* text = new Text(line);
+		text->font = font;
+		text->updateCanvas();
+		text->x = (TF::width - text->width) / 2.0f;
+		text->y = y;
+		text->scrollX = 0;
+		text->scrollY = 0;
+		text->visible = false;
+		addGraphic(text);
+		return text;
 	}
 
 	void GameWorld::newGame(unsigned int seed)
@@ -55,6 +87,7 @@ namespace Toast
 		removeAll();
 		level.forgetRooms();
 		cats.clear();
+		freezeTime = 0;
 		player = NULL;
 		room = NULL;
 		slideTime = -1;
@@ -156,6 +189,31 @@ namespace Toast
 		}
 	}
 
+	void GameWorld::settleCats()
+	{
+		for(size_t i = 0; i < cats.size(); )
+		{
+			Cat* cat = cats[i];
+			if(cat->dead())
+			{
+				const char* fur = cat->kind == Cat::ZOOMIE ? Effects::FUR : Effects::GREY_FUR_TUFT;
+				for(int tuft = 0; tuft < FUR_TUFTS; tuft++)
+					effects->emit(fur, cat->x, cat->y - 6);
+				shake.add(KILL_SHAKE);
+				freezeTime = KILL_FREEZE_SECONDS;
+				cats.erase(cats.begin() + i);
+				remove(cat);
+				continue;
+			}
+
+			bool touching = player->collideRect(player->x, player->y, cat->x - cat->originX, cat->y - cat->originY,
+												(float)cat->width, (float)cat->height);
+			if(cat->active() && touching && player->hurt(cat->x, cat->y))
+				shake.add(HURT_SHAKE);
+			i++;
+		}
+	}
+
 	void GameWorld::render()
 	{
 		float shakeX, shakeY;
@@ -180,6 +238,10 @@ namespace Toast
 
 		if(!room)
 			return;
+		gameOverText->visible = gameOver();
+		restartText->visible = gameOver();
+		if(gameOver())
+			return;
 
 		if(sliding())
 		{
@@ -197,7 +259,18 @@ namespace Toast
 		}
 
 		shake.update(TF::elapsed);
+		if(freezeTime > 0)
+		{
+			freezeTime -= TF::elapsed;
+			return;
+		}
+
 		World::update();
+		settleCats();
+		gameOverText->visible = gameOver();
+		restartText->visible = gameOver();
+		if(gameOver())
+			return;
 
 		int door = doorUnderPlayer();
 		if(door >= 0)

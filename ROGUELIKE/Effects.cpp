@@ -21,6 +21,8 @@ namespace Toast
 		const char* const IMPACT_RING = "impact ring";
 		const char* const DIRT = "dirt";
 		const char* const DIRT_BURST = "dirt burst";
+		const char* const FUR = "fur";
+		const char* const GREY_FUR_TUFT = "grey fur";
 
 		Emitter* create()
 		{
@@ -55,6 +57,15 @@ namespace Toast
 			effects->setGravity(DIRT_BURST, 60);
 			effects->setScale(DIRT_BURST, 1, 0.3f);
 			effects->setAlpha(DIRT_BURST, 1, 0);
+			const char* furTypes[2] = {FUR, GREY_FUR_TUFT};
+			int furFrames[2] = {ORANGE_FUR, GREY_FUR};
+			for(int i = 0; i < 2; i++)
+			{
+				effects->newType(furTypes[i], std::vector<int>(1, furFrames[i]));
+				effects->setMotion(furTypes[i], 0, 12, 0.5f, FULL_TURN, 20, 0.3f);
+				effects->setGravity(furTypes[i], 90);
+				effects->setAlpha(furTypes[i], 1, 0);
+			}
 			return effects;
 		}
 	}

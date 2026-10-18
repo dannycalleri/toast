@@ -22,6 +22,7 @@ namespace Toast
 {
 	const float Cat::SPAWN_SECONDS = 0.9f;
 	const float Cat::CROUCH_SECONDS = 0.4f;
+	const float Cat::FLASH_SECONDS = 0.08f;
 
 	namespace
 	{
@@ -34,6 +35,9 @@ namespace Toast
 		const float POUNCE_RANGE = 90.0f;
 		const float SPAWN_SHAKE = 0.3f;
 		const float DIRT_INTERVAL = 0.1f;
+		const float KNOCKBACK = 6.0f;
+		// cat.png: 6 frames, then their white copies
+		const int FLASH_OFFSET = 6;
 	}
 
 	Cat::Cat(float x, float y, Kind kind, Room* room, Player* target, Emitter* effects, ScreenShake* shake) :
@@ -43,11 +47,13 @@ namespace Toast
 		pounce(STALKING),
 		stateTime(0.0f),
 		lastCrouchSeconds(0.0f),
+		hitPoints(HIT_POINTS),
 		room(room),
 		target(target),
 		effects(effects),
 		shake(shake),
 		age(0.0f),
+		flashTime(0.0f),
 		dirtTimer(0.0f),
 		leapX(x),
 		leapY(y)
@@ -70,15 +76,17 @@ namespace Toast
 		addGraphic(crack);
 
 		sprite = new Spritemap(kind == ZOOMIE ? "assets/cat.png" : "assets/cat_pouncer.png", 16, 16);
-		int idle[2] = {0, 1};
-		int run[2] = {2, 3};
-		int crouchFrame[1] = {4};
-		int pounceFrame[1] = {5};
-		sprite->add("idle", idle, 2, 3);
-		sprite->add("run", run, 2, 10);
-		sprite->add("crouch", crouchFrame, 1);
-		sprite->add("pounce", pounceFrame, 1);
-		sprite->play("idle");
+		struct Animation { const char* name; int frames[2]; unsigned int count; unsigned int rate; };
+		const Animation animations[4] = {{"idle", {0, 1}, 2, 3}, {"run", {2, 3}, 2, 10}, {"crouch", {4, 4}, 1, 0}, {"pounce", {5, 5}, 1, 0}};
+		for(int i = 0; i < 4; i++)
+		{
+			const Animation& a = animations[i];
+			int frames[2] = {a.frames[0], a.frames[1]};
+			int flash[2] = {a.frames[0] + FLASH_OFFSET, a.frames[1] + FLASH_OFFSET};
+			sprite->add(a.name, frames, a.count, a.rate);
+			sprite->add(std::string(a.name) + "_flash", flash, a.count, a.rate);
+		}
+		play("idle");
 		sprite->originX = 8;
 		sprite->originY = 15;
 		sprite->visible = false;
@@ -91,6 +99,24 @@ namespace Toast
 	bool Cat::bodyContains(float px, float py) const
 	{
 		return px >= x - 7 && px <= x + 7 && py >= y - 12 && py <= y;
+	}
+
+	bool Cat::hit(float directionX, float directionY)
+	{
+		if(!active() || dead())
+			return false;
+
+		hitPoints--;
+		flashTime = FLASH_SECONDS;
+		float length = std::sqrt(directionX * directionX + directionY * directionY);
+		if(length > 0)
+			Movement::move(*this, room, directionX / length * KNOCKBACK, directionY / length * KNOCKBACK);
+		return true;
+	}
+
+	void Cat::play(const char* animation)
+	{
+		sprite->play(flashTime > 0 ? std::string(animation) + "_flash" : std::string(animation));
 	}
 
 	void Cat::spawn()
@@ -182,7 +208,7 @@ namespace Toast
 		steer(moveX, moveY);
 		Movement::move(*this, room, moveX * ZOOMIE_SPEED * TF::elapsed, moveY * ZOOMIE_SPEED * TF::elapsed);
 		sprite->flipped = dx > 0;
-		sprite->play("run");
+		play("run");
 	}
 
 	void Cat::setPounce(Pounce next)
@@ -201,7 +227,7 @@ namespace Toast
 		{
 		case STALKING:
 			walkToward(target->x, target->y, STALK_SPEED);
-			sprite->play("run");
+			play("run");
 			// a pounce needs a clear line, or the cat leaps into a wall
 			if(distance < POUNCE_RANGE && clearPathTo(target->x, target->y))
 			{
@@ -212,7 +238,7 @@ namespace Toast
 			break;
 
 		case CROUCHING:
-			sprite->play("crouch");
+			play("crouch");
 			sprite->flipped = leapX > x;
 			if(stateTime >= CROUCH_SECONDS)
 			{
@@ -222,14 +248,14 @@ namespace Toast
 			break;
 
 		case LEAPING:
-			sprite->play("pounce");
+			play("pounce");
 			walkToward(leapX, leapY, LEAP_SPEED);
 			if(stateTime >= LEAP_SECONDS)
 				setPounce(RESTING);
 			break;
 
 		case RESTING:
-			sprite->play("idle");
+			play("idle");
 			if(stateTime >= REST_SECONDS)
 				setPounce(STALKING);
 			break;
@@ -240,6 +266,7 @@ namespace Toast
 	{
 		age += TF::elapsed;
 		stateTime += TF::elapsed;
+		flashTime -= TF::elapsed;
 
 		if(state == SPAWNING)
 			spawn();

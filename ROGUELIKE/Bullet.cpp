@@ -57,16 +57,17 @@ namespace Toast
 			effects->emit(particle, x, y);
 	}
 
-	bool Bullet::hitsCat() const
+	Cat* Bullet::catHit() const
 	{
 		if(!cats)
-			return false;
+			return NULL;
 		for(size_t i = 0; i < cats->size(); i++)
 		{
-			if((*cats)[i]->active() && (*cats)[i]->bodyContains(x, y))
-				return true;
+			Cat* cat = (*cats)[i];
+			if(cat->active() && !cat->dead() && cat->bodyContains(x, y))
+				return cat;
 		}
-		return false;
+		return NULL;
 	}
 
 	void Bullet::breakApart()
@@ -85,7 +86,10 @@ namespace Toast
 		{
 			x += velocityX * TF::elapsed / steps;
 			y += velocityY * TF::elapsed / steps;
-			if((room && room->isSolidAt(x, y)) || hitsCat())
+			Cat* cat = catHit();
+			if(cat)
+				cat->hit(velocityX, velocityY);
+			if(cat || (room && room->isSolidAt(x, y)))
 			{
 				breakApart();
 				return;

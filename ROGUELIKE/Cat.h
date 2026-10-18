@@ -30,6 +30,8 @@ namespace Toast
 
 		static const float SPAWN_SECONDS;
 		static const float CROUCH_SECONDS;
+		static const int HIT_POINTS = 3;
+		static const float FLASH_SECONDS;
 
 		Cat(float x, float y, Kind kind, Room* room, Player* target, Emitter* effects, ScreenShake* shake);
 
@@ -37,6 +39,9 @@ namespace Toast
 		bool active() const { return state == ACTIVE; }
 		// the drawn body, taller than the feet hitbox, for bullets
 		bool bodyContains(float px, float py) const;
+		// a bullet flying along (directionX, directionY); false when the cat cannot be hit
+		bool hit(float directionX, float directionY);
+		bool dead() const { return hitPoints <= 0; }
 
 		virtual void update();
 
@@ -45,6 +50,7 @@ namespace Toast
 		Pounce pounce;
 		float stateTime;
 		float lastCrouchSeconds;
+		int hitPoints;
 
 	private:
 		void spawn();
@@ -55,6 +61,7 @@ namespace Toast
 		void steer(float& dx, float& dy);
 		bool clearPathTo(float targetX, float targetY) const;
 		void setPounce(Pounce next);
+		void play(const char* animation);
 
 		Room* room;
 		Player* target;
@@ -63,6 +70,7 @@ namespace Toast
 		Spritemap* sprite;
 		Spritemap* crack;
 		float age;
+		float flashTime;
 		float dirtTimer;
 		float leapX;
 		float leapY;

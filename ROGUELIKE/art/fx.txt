@@ -1,5 +1,5 @@
 ; Effects, 8x8 each: 0 bullet, 1 spit drop, 2 spark, 3 big spark,
-; 4 dust, 5 big dust, 6 impact ring, 7 shadow.
+; 4 dust, 5 big dust, 6 impact ring, 7 shadow, 8 orange fur, 9 grey fur.
 size 8 8
 columns 8
 
@@ -82,3 +82,23 @@ frame shadow
 .kkkkkk.
 kkkkkkkk
 .kkkkkk.
+
+frame orange fur
+........
+....o...
+..o.oo..
+...ooyo.
+..oyoo..
+...oo.o.
+....o...
+........
+
+frame grey fur
+........
+....d...
+..d.dd..
+...ddsd.
+..dsdd..
+...dd.d.
+....d...
+........

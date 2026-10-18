@@ -13,7 +13,9 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastCommon.h"
 #include "ToastWorld.h"
 #include "Level.h"
+#include "Player.h"
 #include "ScreenShake.h"
+#include <string>
 #include <vector>
 
 namespace Toast
@@ -28,6 +30,7 @@ namespace Toast
 	public:
 		static const int HUD_HEIGHT = 48;
 		static const float SLIDE_SECONDS;
+		static const float KILL_FREEZE_SECONDS;
 
 		GameWorld();
 		virtual ~GameWorld();
@@ -37,6 +40,7 @@ namespace Toast
 
 		void newGame(unsigned int seed);
 		bool sliding() const { return slideTime >= 0; }
+		bool gameOver() const { return player && !player->alive(); }
 
 		Level level;
 		Player* player;
@@ -44,6 +48,7 @@ namespace Toast
 		Emitter* effects;
 		ScreenShake shake;
 		std::vector<Cat*> cats;
+		float freezeTime;
 
 	private:
 		void showRoom(Room* room);
@@ -51,10 +56,17 @@ namespace Toast
 		// the door of the current room the player stands in, or -1
 		int doorUnderPlayer();
 		void spawnCats(Room* room);
+		// removes dead cats and lets the live ones hurt the kid
+		void settleCats();
+		Text* centredText(const std::string& line, Font* font, float y);
 
 		std::vector<bool> visited;
 
 		Canvas* hudBand;
+		Font* bigFont;
+		Font* smallFont;
+		Text* gameOverText;
+		Text* restartText;
 		float slideTime;
 		float slideFromX;
 		float slideFromY;

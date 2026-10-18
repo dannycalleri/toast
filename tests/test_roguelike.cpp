@@ -12,6 +12,7 @@
 #include "ScreenShake.h"
 #include "ToastEmitter.h"
 #include "ToastInput.h"
+#include "ToastText.h"
 
 #include <algorithm>
 #include <set>
@@ -567,6 +568,118 @@ TOAST_TEST(roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet)
 	CHECK(!world->cats.empty() && world->cats.size() <= points);
 	for(size_t i = 0; i < world->cats.size(); i++)
 		CHECK(!world->cats[i]->active());
+	delete engine;
+}
+
+namespace
+{
+	// keeps the kid standing on the cat for a while, whatever knocks him back
+	void standOn(GameWorld* world, Cat* cat, float seconds)
+	{
+		TF::elapsed = 0.02f;
+		for(float t = 0; t < seconds - 0.001f; t += TF::elapsed)
+		{
+			world->player->x = cat->x;
+			world->player->y = cat->y;
+			world->update();
+		}
+	}
+}
+
+TOAST_TEST(roguelike_kid_is_hurt_only_by_active_cats)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Cat* cat = addCat(world, Cat::ZOOMIE, 0, 0);
+
+	standOn(world, cat, Cat::SPAWN_SECONDS - 0.1f);
+	CHECK(world->player->health == Player::MAX_HEALTH);
+	standOn(world, cat, 0.2f);
+	CHECK(world->player->health == Player::MAX_HEALTH - 1);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_two_touches_within_a_second_cost_half_a_heart_once)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Cat* cat = addCat(world, Cat::ZOOMIE, 0, 0);
+	runFor(world, Cat::SPAWN_SECONDS + 0.02f);
+
+	standOn(world, cat, 0.9f);
+	CHECK(world->player->health == Player::MAX_HEALTH - 1);
+	standOn(world, cat, 0.3f);
+	CHECK(world->player->health == Player::MAX_HEALTH - 2);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_last_half_heart_ends_the_game_and_r_restarts)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	Cat* cat = addCat(world, Cat::ZOOMIE, 0, 0);
+	runFor(world, Cat::SPAWN_SECONDS + 0.02f);
+
+	world->player->health = 1;
+	standOn(world, cat, 0.04f);
+	CHECK(world->gameOver());
+	CHECK(world->graphicsList.size() > 0);
+	int shownTexts = 0;
+	for(size_t i = 0; i < world->graphicsList.size(); i++)
+		shownTexts += dynamic_cast<Text*>(world->graphicsList[i]) && world->graphicsList[i]->visible;
+	CHECK(shownTexts == 2);
+
+	float catX = cat->x;
+	runFor(world, 0.5f);
+	CHECK(cat->x == catX);
+
+	std::vector<unsigned char> oldDoors = world->level.maze.doors;
+	std::vector<int> oldRooms = world->level.maze.rooms;
+	Input::pressedKeys[TOAST_KEY_R] = true;
+	world->update();
+	Input::pressedKeys[TOAST_KEY_R] = false;
+	CHECK(world->level.maze.doors != oldDoors || world->level.maze.rooms != oldRooms);
+	CHECK(!world->gameOver());
+	for(size_t i = 0; i < world->graphicsList.size(); i++)
+		CHECK(!dynamic_cast<Text*>(world->graphicsList[i]) || !world->graphicsList[i]->visible);
+	CHECK(world->player->health == Player::MAX_HEALTH);
+	CHECK(world->cats.empty());
+	CHECK(world->room == world->level.startRoom());
+	delete engine;
+}
+
+TOAST_TEST(roguelike_cat_dies_on_its_third_hit_in_a_burst_of_fur)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	world->player->active = false;
+	world->player->x = world->room->x + Room::WIDTH / 2;
+	world->player->y = world->room->y + Room::HEIGHT / 2;
+	// a pouncer right next to the kid crouches in place, so it stays in the line of fire
+	Cat* cat = addCat(world, Cat::POUNCER, 40, 0);
+	runFor(world, Cat::SPAWN_SECONDS + 0.02f);
+
+	for(int shot = 1; shot <= 3; shot++)
+	{
+		int particles = world->effects->particleCount();
+		float trauma = world->shake.trauma;
+		world->add(new Bullet(cat->x - 20, cat->y - 6, 1, 0, world->room, world->effects, &world->cats));
+		TF::elapsed = 0.02f;
+		for(int i = 0; i < 15 && !bulletsIn(world).empty(); i++)
+			world->update();
+		if(shot < 3)
+		{
+			CHECK(world->cats.size() == 1);
+			CHECK(cat->hitPoints == Cat::HIT_POINTS - shot);
+		}
+		else
+		{
+			CHECK(world->cats.empty());
+			CHECK(std::find(world->entities.begin(), world->entities.end(), (Entity*)cat) == world->entities.end());
+			CHECK(world->effects->particleCount() >= particles + 10);
+			CHECK(world->shake.trauma > trauma);
+		}
+	}
 	delete engine;
 }
 
