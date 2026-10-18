@@ -11,7 +11,6 @@ Copyright (C) 2013 Danny Calleri
 #define TOASTGRAPHICS_H
 
 #include "ToastCommon.h"
-#include <allegro5/allegro_image.h>
 #include "TF.h"
 #include <string>
 #include <map>

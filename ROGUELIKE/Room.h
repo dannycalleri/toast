@@ -10,8 +10,9 @@ Copyright (C) 2013 Danny Calleri
 #ifndef ROOM_H
 #define ROOM_H
 
-#include <ToastCommon.h>
-#include <ToastEntity.h>
+#include "ToastCommon.h"
+#include "ToastEntity.h"
+#include <string>
 #include <vector>
 #include "Door.h"
 
@@ -23,7 +24,7 @@ namespace Toast
 	class Room : public Entity
 	{
 	public:
-		Room(char* filename, GameWorld* gameWorld);
+		Room(const std::string& filename, GameWorld* gameWorld);
 		Room(const Room& rhs);
 		virtual ~Room();
 
@@ -39,10 +40,6 @@ namespace Toast
 		void calculateBoundingBox();
 		void locateDoors();
 		bool overlapBoxVSBox(Rectangle* other, float otherX, float otherY);
-
-	private:
-		void stringCopy(char* dest, char* src);
-		void stringLength(char* str);
 
 	public:
 		Tilemap* tilemap;
@@ -75,7 +72,7 @@ namespace Toast
 
 	protected:
 		GameWorld* world;
-		char* filename;
+		std::string filename;
 		Grid* doorsGrid;
 	};
 }

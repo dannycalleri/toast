@@ -33,13 +33,6 @@ namespace Toast
 		static int mouseWindowX;
 		static int mouseWindowY;
 
-		/**
-		*	Helpers for calculating mouse
-		*	coordinates on screen
-		*/
-		static float mouseScale;
-		static float offsetY;
-
 
 		static bool leftMousePressed;	// if LMB has been pressed in the current frame
 		static bool leftMouseDown;		// if LMB is held down by the user
@@ -56,6 +49,10 @@ namespace Toast
 		*/
 		static bool pressed(unsigned int key);
 		static bool down(unsigned int key);
+
+		// maps an SDL scancode to a TOAST_KEY_* code,
+		// 0 for keys Toast has no code for
+		static unsigned int keyFromScancode(SDL_Scancode scancode);
 	};
 }
 

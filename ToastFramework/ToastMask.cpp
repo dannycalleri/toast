@@ -11,7 +11,6 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastEntity.h"
 #include "ToastHitbox.h"
 //#include <functional>
-#include <iostream>
 
 namespace Toast
 {
@@ -44,6 +43,8 @@ namespace Toast
 
 				break;
 			}
+		default:
+			break;
 		}
 		
 		if(!typeFound && !isColliding)
@@ -110,7 +111,6 @@ namespace Toast
 
 	bool Mask::collideMask(Mask* other)
 	{
-		std::cout << "[MASK] collideMask" << "\n";
 		return false;
 		/*
 		return parent->x - parent->originX + parent->width > other->parent->x - other->parent->originX

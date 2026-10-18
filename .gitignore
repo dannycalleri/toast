@@ -50,3 +50,6 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+# Build output #
+################
+build/

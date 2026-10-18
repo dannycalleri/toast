@@ -12,7 +12,6 @@ Copyright (C) 2013 Danny Calleri
 #include "Door.h"
 #include "GameWorld.h"
 #include "TF.h"
-#include <iostream>
 
 namespace Toast
 {
@@ -26,8 +25,6 @@ namespace Toast
 		rRooms.clear();
 		startRoom = 0;
 		bossRoom = 0;
-
-		std::cout << "[ROOMS MANAGER] created - world = " << world << "\n";
 
 		populate();
 	}
@@ -104,6 +101,14 @@ namespace Toast
 	{
 		Room* room = NULL;
 		int ran = 0;
+
+		// copying from an empty set would index past its end
+		// (it is empty when the room files failed to load)
+		std::vector<Room*>* set = type == DoorType::UP ? &uRooms
+								: type == DoorType::DOWN ? &dRooms
+								: type == DoorType::LEFT ? &lRooms : &rRooms;
+		if(set->empty())
+			return NULL;
 			
 		switch(type)
 		{
@@ -144,8 +149,6 @@ namespace Toast
 
 	void RoomsManager::populate()
 	{
-		std::cout << "[ROOMS MANAGER] populate() \n";
-
 		loadLevel();
 
 		startRoom = new Room("rooms/start.oel", world);

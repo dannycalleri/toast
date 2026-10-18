@@ -8,6 +8,7 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "ToastFont.h"
+#include "TF.h"
 
 namespace Toast
 {
@@ -16,16 +17,16 @@ namespace Toast
 		this->fileName = fileName;
 		this->size = size;
 
-		font = al_load_ttf_font(this->fileName.c_str(), this->size, 0);
+		font = TTF_OpenFont(TF::resolvePath(this->fileName).c_str(), float(this->size));
 		if (!font)
 		{
-			TOAST_ERROR("[FONT] Error while loading ttf file");
+			TOAST_ERROR(SDL_GetError());
 		}
 	}
 
 	Font::~Font()
 	{
-		//TOAST_SAFE_DELETE(font);
-		al_destroy_font(this->font);
+		if(font)
+			TTF_CloseFont(font);
 	}
 }

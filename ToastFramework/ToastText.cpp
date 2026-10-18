@@ -40,8 +40,14 @@ namespace Toast
 		if(!isFixed)
 		{
 			// recalculate width and height
-			this->width = al_get_text_width(font->getAllegro(), this->text.c_str());
-			this->height = al_get_font_line_height(font->getAllegro());
+			int w = 0;
+			if(font && font->getHandle())
+			{
+				int h = 0;
+				TTF_GetStringSize(font->getHandle(), this->text.c_str(), 0, &w, &h);
+				this->height = TTF_GetFontHeight(font->getHandle());
+			}
+			this->width = w;
 			if(canvas != 0)
 				delete canvas;
 			canvas = new Canvas(this->width, this->height);

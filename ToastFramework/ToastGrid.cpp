@@ -1,4 +1,5 @@
 #include "ToastGrid.h"
+#include <cmath>
 #include <iostream>
 #include <sstream>
 
@@ -28,6 +29,16 @@ namespace Toast
 		this->usePositions=false;
 	}
 
+	Grid::Grid(const Grid& rhs) :
+		Hitbox(rhs),
+		columns(rhs.columns),
+		rows(rhs.rows),
+		usePositions(rhs.usePositions),
+		tile(new Rectangle(*rhs.tile)),
+		data(rhs.data)
+	{
+	}
+
 	Grid::~Grid()
 	{
 		delete tile;
@@ -40,6 +51,9 @@ namespace Toast
 			column /= tile->width;
 			row /= tile->height;
 		}
+
+		if(row < 0 || row >= rows || column < 0 || column >= columns)
+			return;
 
 		data[row][column] = solid;
 	}
@@ -62,6 +76,9 @@ namespace Toast
 			column /= tile->width;
 			row /= tile->height;
 		}
+
+		if(row < 0 || row >= rows || column < 0 || column >= columns)
+			return false;
 
 		return data[row][column];
 	}
@@ -122,6 +139,16 @@ namespace Toast
 
 					col++;
 				}
+
+				if(tmpRow.size() > 0)
+				{
+					// last token is in the string
+					std::istringstream ss(tmpRow);
+					int tileIndex;
+					ss >> tileIndex;
+
+					setTile(col, i, tileIndex);
+				}
 			}
 			else // reading bitstring
 			{
@@ -135,18 +162,6 @@ namespace Toast
 				}
 
 				//std::cout << "\n";
-			}
-
-			if(tmpRow.size() > 0)
-			{
-				// last token is in the string
-				//std::cout << tmpRow << "\n";
-
-				std::istringstream ss(tmpRow);
-				int tileIndex;
-				ss >> tileIndex;
-
-				setTile(col, i, tileIndex);
 			}
 
 		}

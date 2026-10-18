@@ -16,15 +16,16 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastGrid.h"
 #include "ToastTilemap.h"
 
-#include <iostream>
 #include <algorithm>
 #include <functional>
+#include <random>
 
 namespace Toast
 {
 	Dungeon::Dungeon(GameWorld* gameWorld):
 		world(gameWorld),
-		MAX_TRIES(10)
+		MAX_TRIES(10),
+		MAX_ATTEMPTS(100)
 	{
 		size = 0;
 		rooms.clear();
@@ -57,11 +58,24 @@ namespace Toast
 		rooms.push_back(r);
 	}
 
-	void Dungeon::generate(int size)
+	bool Dungeon::generate(int size)
 	{
-		// creating rooms for the 
-		// current dungeon
-		createRooms(size);
+		// an attempt that gets stuck starts over from scratch; capped,
+		// because when no layout can be built (e.g. the room files
+		// failed to load) every attempt fails
+		bool created = false;
+		for(int attempt = 0; attempt < MAX_ATTEMPTS && !created; attempt++)
+		{
+			created = createRooms(size);
+			if(!created)
+				destroy();
+		}
+
+		if(!created)
+		{
+			TOAST_ERROR("[DUNGEON] no dungeon could be generated");
+			return false;
+		}
 			
 		// calculate distance
 		// from the startRoom to
@@ -77,10 +91,12 @@ namespace Toast
 		// load rooms content
 		loadRooms();
 
-		std::cout << "[DUNGEON] generated " << size << " rooms dungeon\n";
+		if(TF::debug)
+			SDL_Log("[DUNGEON] generated %d rooms dungeon", size);
+		return true;
 	}
 
-	void Dungeon::createRooms(unsigned int size)
+	bool Dungeon::createRooms(unsigned int size)
 	{
 		this->size = size;
 		cycles = 0;
@@ -108,7 +124,6 @@ namespace Toast
 		bool roomAdded = false;
 		Room* currentRoom = 0;
 		unsigned int count = 0;
-		unsigned int index = 0;
 
 		while(rooms.size() < size - 1)
 		{
@@ -116,10 +131,7 @@ namespace Toast
 
 			if(cycles >= maxCycles)
 			{
-				// increase number of potential blocks
-				destroy();
-				createRooms(size);
-				return;
+				return false;
 			}
 
 			currentRoom = rooms[count];
@@ -132,7 +144,9 @@ namespace Toast
 				roomAdded = false;
 
 				// randomly sort rooms vector
-				std::random_shuffle(currentRoom->doors.begin(), currentRoom->doors.end());
+				// seeded from TFRandom so one seed reproduces the whole dungeon
+				std::mt19937 shuffleRng(unsigned(TF::random() * 4294967295.0));
+				std::shuffle(currentRoom->doors.begin(), currentRoom->doors.end(), shuffleRng);
 
 				for(unsigned int i=0; i < currentRoom->doors.size(); i++)
 				{
@@ -184,10 +198,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -233,10 +244,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -282,10 +290,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -331,10 +336,7 @@ namespace Toast
 										}
 										else
 										{
-											//tries = 0;
-											destroy();
-											createRooms(size);
-											return;
+											return false;
 										}
 									}
 								}
@@ -344,6 +346,8 @@ namespace Toast
 				}
 			}
 		}
+
+		return true;
 	}
 
 	void Dungeon::calculateDistance()
@@ -354,21 +358,7 @@ namespace Toast
 			r->distance = TF::distance(startRoom->x, startRoom->y, r->x, r->y);
 		}
 
-		/*std::cout << "[DUNGEON] DISTANCE BEFORE ###" << "\n";
-		for(unsigned int i = 0; i < rooms.size(); i++)
-		{
-			Room* r = rooms[i];
-			std::cout << "[DUNGEON] ROOM DISTANCE = " << r->distance << "\n";
-		}*/
-
 		std::sort(rooms.begin(), rooms.end(), distanceCompare);
-
-		std::cout << "\n[DUNGEON] DISTANCE AFTER SORTING ### " << "\n";
-		for(unsigned int i = 0; i < rooms.size(); i++)
-		{
-			Room* r = rooms[i];
-			std::cout << "[DUNGEON] ROOM DISTANCE = " << r->distance << "\n";
-		}
 	}
 
 	bool Dungeon::distanceCompare(const Room* a, const Room* b)
@@ -385,11 +375,17 @@ namespace Toast
 		bool added = false;
 
 		Room* r = 0;
+		Door* downDoor = bossRoom->getDoor(DoorType::DOWN);
+		if(!downDoor)
+		{
+			TOAST_ERROR("[DUNGEON] the boss room has no DOWN door");
+			delete bossRoom;
+			return;
+		}
+
 		for(unsigned int i=0; i < rooms.size(); i++)
 		{
 			r = rooms[i];
-			
-			Door* downDoor = bossRoom->getDoor(DoorType::DOWN);
 				
 			float offsetX = 0.0f;
 			int numCols = r->roomWidth / Game::TILESIZE;

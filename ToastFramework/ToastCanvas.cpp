@@ -12,10 +12,31 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastEngine.h"
 #include "ToastText.h"
 
-#include <iostream>
-
 namespace Toast
 {
+	namespace
+	{
+		class TargetScope
+		{
+		public:
+			TargetScope(SDL_Texture* target)
+			{
+				renderer = TF::engine->renderer;
+				previous = SDL_GetRenderTarget(renderer);
+				SDL_SetRenderTarget(renderer, target);
+			}
+
+			~TargetScope()
+			{
+				SDL_SetRenderTarget(renderer, previous);
+			}
+
+		private:
+			SDL_Renderer* renderer;
+			SDL_Texture* previous;
+		};
+	}
+
 	Canvas::Canvas(unsigned int width, unsigned int height, bool transparent)
 	{
 		this->width = width;
@@ -28,26 +49,30 @@ namespace Toast
 
 	Canvas::~Canvas()
 	{
-		al_destroy_bitmap(buffer);
+		if(buffer)
+			SDL_DestroyTexture(buffer);
 	}
 
 	void Canvas::init()
 	{
-		buffer = al_create_bitmap(this->width, this->height);
+		// SDL cannot create a 0x0 texture (an empty Text has width 0)
+		int w = width > 0 ? width : 1;
+		int h = height > 0 ? height : 1;
+		buffer = SDL_CreateTexture(TF::engine->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
 		if(!buffer)
 		{
-			al_show_native_message_box(TF::engine->display, "Error", "Error", "[CANVAS] Failed to create canvas buffer!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			TOAST_ERROR("[CANVAS] Failed to create canvas buffer!");
 			return;
 		}
 
-		//std::cout << "[Canvas::init()] CLEARING CANVAS\n";
+		// blending into a transparent target leaves premultiplied colors
+		SDL_SetTextureBlendMode(buffer, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+
 		clear(0,0,0);
 	}
 
 	void Canvas::render()
 	{
-		//std::cout << "[CANVAS] ALPHA: " << this->alpha << "\n";
 		float renderX = this->x - TF::camera->x * this->scrollX;
 		float renderY = this->y - TF::camera->y * this->scrollY;
 
@@ -62,8 +87,8 @@ namespace Toast
 
 	void Canvas::clear(byte r, byte g, byte b)
 	{
-		if(al_get_target_bitmap() != this->buffer)
-			al_set_target_bitmap(this->buffer);
+		if(!buffer) return;
+		TargetScope scope(buffer);
 
 		if(!transparent)
 		{
@@ -73,54 +98,61 @@ namespace Toast
 		{
 			Graphics::Clear(0, 0, 0, 0);
 		}
-
-		TF::engine->resetRenderingBuffer();
 	}
 
 	void Canvas::fill(Rectangle* rect, byte r, byte g, byte b)
 	{
-		if(al_get_target_bitmap() != this->buffer)
-			al_set_target_bitmap(this->buffer);
+		if(!buffer) return;
+		TargetScope scope(buffer);
 
-		al_draw_filled_rectangle(rect->x, rect->y, rect->x + rect->width, rect->y + rect->height, al_map_rgb(r,g,b) );
-
-		TF::engine->resetRenderingBuffer();
+		SDL_Renderer* renderer = TF::engine->renderer;
+		SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+		SDL_FRect area = {rect->x, rect->y, rect->width, rect->height};
+		SDL_RenderFillRect(renderer, &area);
 	}
 
 	void Canvas::drawRect(Rectangle* rect, byte r, byte g, byte b, float thickness)
 	{
-		if(al_get_target_bitmap() != this->buffer)
-			al_set_target_bitmap(this->buffer);
+		if(!buffer) return;
+		TargetScope scope(buffer);
 
-		al_draw_rectangle(rect->x, rect->y, rect->x + rect->width, rect->y + rect->height, al_map_rgb(r,g,b), thickness);
+		SDL_Renderer* renderer = TF::engine->renderer;
+		SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 
-		TF::engine->resetRenderingBuffer();
+		// rect sizes can be negative (the console's selection rect
+		// dragged up or left), so normalise before drawing the edges
+		float x = rect->width < 0 ? rect->x + rect->width : rect->x;
+		float y = rect->height < 0 ? rect->y + rect->height : rect->y;
+		float w = SDL_fabsf(rect->width);
+		float h = SDL_fabsf(rect->height);
+		float t = thickness;
+
+		// SDL has no thick outline, so draw it as four bands
+		// centred on the edges, as Allegro did
+		SDL_FRect edges[4] = {
+			{x - t/2, y - t/2, w + t, t},
+			{x - t/2, y + h - t/2, w + t, t},
+			{x - t/2, y - t/2, t, h + t},
+			{x + w - t/2, y - t/2, t, h + t}
+		};
+		SDL_RenderFillRects(renderer, edges, 4);
 	}
 
 	void Canvas::drawTextureRegion(Texture* texture, Rectangle* srcRect, float x, float y, bool flipped)
 	{
-		if(al_get_target_bitmap() != this->buffer)
-			al_set_target_bitmap(this->buffer);
+		if(!buffer) return;
+		TargetScope scope(buffer);
 
 		Graphics::DrawRegion(texture, srcRect->x, srcRect->y, srcRect->width, srcRect->height, x, y, alpha, flipped, 0.0f);
-
-		TF::engine->resetRenderingBuffer();
 	}
 
 	void Canvas::drawText(Text* text)
 	{
-		if(al_get_target_bitmap() != this->buffer)
-			al_set_target_bitmap(this->buffer);
+		if(!buffer) return;
+		TargetScope scope(buffer);
 
-		//if(text->relative)
-		//{
-			//Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, text->point->x, text->point->y);
-		//}
-		//else
-		//{
-			Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, text->x, text->y);
-		//}
-
-		TF::engine->resetRenderingBuffer();
+		// the canvas is exactly the text's size, so text->x/y
+		// (where the canvas goes) would push the glyphs off it
+		Graphics::DrawTextFont(text->font, text->text, 255, 255, 255, 0.0f, 0.0f);
 	}
 }

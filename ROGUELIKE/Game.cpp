@@ -17,6 +17,8 @@ namespace Toast
 	Game::Game()
 		: Engine(1024, 768, false)
 	{
+		setPixelArt(true);
+
 		// giving the game a world to update
 		TF::world = new GameWorld();
 		TF::debug = true;

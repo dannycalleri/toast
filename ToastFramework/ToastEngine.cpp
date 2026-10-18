@@ -14,15 +14,13 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastInput.h"
 #include "ToastConsole.h"
 #include "ToastFont.h"
-#include <iostream>
 #include <algorithm>
-using namespace std;
-
-//#define TOAST_OPENGL
-#define TOAST_DIRECT3D
+#include <cstdlib>
 
 namespace Toast
 {
+	const double Engine::MAX_FRAME_SECONDS = 0.1;
+
 	Engine::Engine(unsigned int width, unsigned int height, bool fullscreen)
 		: EventManager()
 	{
@@ -37,60 +35,61 @@ namespace Toast
 		this->fullscreen=fullscreen;
 		this->paused = false;
 		this->isRunning = true;
-		//this->screen = NULL;
-		//this->renderer = NULL;
+		this->window = NULL;
+		this->renderer = NULL;
 		this->random = NULL;
 
 		this->prevTime = 0;
-		this->time = 0;
 
 		this->frameUpdateTimer = 0.0f;
 		this->frameCounter = 0;
 
-		this->buffer=0;
-		this->scaleH=0.0f;
-		this->scaleW=0.0f;
-		this->scaleX=0.0f;
-		this->scaleY=0.0f;
-
 		// Init Window, Renderer, Random numbers, etc
 		if(!this->initEngine())
 		{
-			TOAST_ERROR("ERROR: Init engine error!");
+			fatalError(SDL_GetError());
+			// game constructors run right after this one and
+			// use TF::console and TF::font, which are not created
+			std::exit(EXIT_FAILURE);
 		}
 	}
 
 	Engine::~Engine()
 	{
-		delete random;
-		delete TF::camera;
+		// everything below owns SDL textures or fonts,
+		// so it goes before the renderer and TTF
 		delete TF::world;
+		TF::world = NULL;
+		delete TF::console;
+		TF::console = NULL;
 		delete TF::font;
-
-		// delete all textures!
+		TF::font = NULL;
 		TF::destroyAllTextures();
 
-		delete TF::console;
+		delete random;
+		delete TF::camera;
+		TF::camera = NULL;
 
-		// debug
-		system("pause");
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		TTF_Quit();
+		SDL_Quit();
+
+		TF::engine = NULL;
 	}
 
 	int Engine::run()
 	{
+		prevTime = SDL_GetTicksNS();
 
 		// Run the game engine :)
 		while(this->isRunning)
 		{
 			checkEvents();
 
-			//time = SDL_GetTicks();
-			time = al_get_time();
-
-
-			TF::elapsed = time - prevTime;//) / 1000.0f;
-
-			//std::cout << "ELAPSED TIME: " << TF::elapsed << "\n";
+			Uint64 time = SDL_GetTicksNS();
+			TF::elapsed = frameSeconds(prevTime, time);
+			prevTime = time;
 
 			// ====================
 			updateEngineStats();
@@ -100,11 +99,7 @@ namespace Toast
 			// world
 			this->update();
 			this->render();
-
-			prevTime = time;
 		}
-
-		cleanUp();
 
 		return 0;
 	}
@@ -122,19 +117,27 @@ namespace Toast
 			TF::console->update();
 	}
 
+	double Engine::frameSeconds(Uint64 prevTicksNS, Uint64 ticksNS)
+	{
+		return std::min(double(ticksNS - prevTicksNS) / SDL_NS_PER_SECOND, MAX_FRAME_SECONDS);
+	}
+
+	void Engine::setPixelArt(bool pixelArt)
+	{
+		SDL_SetDefaultTextureScaleMode(renderer, pixelArt ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
+	}
+
 	void Engine::resetRenderingBuffer()
 	{
-		al_set_target_bitmap(this->buffer);
+		SDL_SetRenderTarget(renderer, NULL);
 	}
 
 	void Engine::render()
 	{
+		resetRenderingBuffer();
 
-		al_set_target_bitmap(this->buffer);
-
-		// clearing window with a new color
+		// also clears the letterbox bars
 		Graphics::Clear(0, 0, 0);
-
 
 		if(TF::world->visible)
 			TF::world->render();
@@ -142,15 +145,6 @@ namespace Toast
 		if(TF::debug)
 			TF::console->render();
 
-
-		al_set_target_backbuffer(display);
-
-		Graphics::Clear(0,0,0);
-
-		//std::cout << "scaleX: " << scaleX << " scaleY: " << scaleY << " scaleW: " << scaleW << " scaleH: " << scaleH << "\n";
-		al_draw_scaled_bitmap(buffer, 0, 0, float(this->width), float(this->height), scaleX, scaleY, scaleW, scaleH, 0);
-
-		// present buffer
 		Graphics::Present();
 	}
 
@@ -163,8 +157,6 @@ namespace Toast
 		{
 			TF::FPS = frameCounter;
 
-			std::cout << "FPS : " << TF::FPS << "\n";
-
 			frameUpdateTimer = 0.0f;
 			frameCounter = 0;
 		}
@@ -172,161 +164,39 @@ namespace Toast
 
 	bool Engine::initEngine()
 	{
-		display = NULL;
-
-		// initializing allegro library
-		if(!al_init()) 
-		{	
-			al_show_native_message_box(display, "Error", "Error", "Failed to initialize allegro!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
-
+		if(!SDL_Init(SDL_INIT_VIDEO))
 			return false;
-		}
 
-		if(!al_install_mouse()) 
-		{
-			al_show_native_message_box(display, "Error", "Error", "Failed to initialize the mouse!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		if(!TTF_Init())
 			return false;
-		}
 
-		if(!al_install_keyboard()) 
+		// leaves room for the menu bar, dock and window borders
+		int windowWidth = this->width;
+		int windowHeight = this->height;
+		SDL_Rect usable;
+		if(SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usable))
 		{
-			al_show_native_message_box(display, "Error", "Error", "Failed to initialize the keyboard!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
-			return false;
-		}
-
-		if(!al_init_image_addon()) 
-		{
-			al_show_native_message_box(display, "Error", "Error", "Failed to initialize al_init_image_addon!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
-			return false;
-		}
-
-		if(!al_init_primitives_addon())
-		{
-			al_show_native_message_box(display, "Error", "Error", "Failed to initialize al_init_primitive_addon!", 
-									 NULL, ALLEGRO_MESSAGEBOX_ERROR);
-			return false;
-		}
-
-		al_init_font_addon(); // initialize the font addon
-		al_init_ttf_addon();  // initialize the ttf (True Type Font) addon
-
-		// struct to be filled with display information
-		// using this to retrieve native resolution
-		ALLEGRO_DISPLAY_MODE disp_data;
-
-		if(fullscreen)
-		{
-			al_get_display_mode(al_get_num_display_modes() - 1, &disp_data);
-
-			// fullscreen mode
-#ifdef TOAST_DIRECT3D
-			al_set_new_display_flags(ALLEGRO_DIRECT3D | ALLEGRO_FULLSCREEN);
-#endif
-
-#ifdef TOAST_OPENGL
-			al_set_new_display_flags(ALLEGRO_OPENGL | ALLEGRO_FULLSCREEN);
-#endif
-
-			// linear filtering
-			al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
-
-			display = al_create_display(disp_data.width, disp_data.height);
-
-			// creating rendering buffer
-			buffer = al_create_bitmap(this->width, this->height);
-
-			// scale factors
-			float sx = disp_data.width / float(this->width);
-			float sy = disp_data.height / float(this->height);
-
-			float scale = min(sx, sy);
-
-			// calculating how much the buffer should be scaled
-			scaleW = this->width * scale;
-			scaleH = this->height * scale;
-			scaleX = (disp_data.width - scaleW)/2.0f;
-			scaleY = (disp_data.height - scaleH)/2.0f;
-		}
-		else
-		{
-			//al_get_display_mode(al_get_num_display_modes() - 1, &disp_data);
-
-			float windowWidth = 1024.0f;
-			float windowHeight = 768.0f;
-
-			// full screen window
-#ifdef TOAST_DIRECT3D
-			al_set_new_display_flags(ALLEGRO_DIRECT3D | ALLEGRO_FULLSCREEN_WINDOW);
-#endif
-
-#ifdef TOAST_OPENGL
-			al_set_new_display_flags(ALLEGRO_OPENGL | ALLEGRO_FULLSCREEN_WINDOW);
-#endif
-			
-			// linear filtering
-			al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
-
-			display = al_create_display(windowWidth, windowHeight);
-
-			al_set_window_title(al_get_current_display(), "Toast Engine");
-			al_set_window_position(al_get_current_display(),20,20);
-
-			// creating rendering buffer
-			buffer = al_create_bitmap(this->width, this->height);
-
-			// scale factors
-			float sx = windowWidth / float(this->width);
-			float sy = windowHeight / float(this->height);
-
-			float scale = min(sx, sy);
-
-			// calculating how much the buffer should be scaled
-			scaleW = this->width * scale;
-			scaleH = this->height * scale;
-
-			// we divide by two because we want the same
-			// to leave the same space between both
-			// the sides of the screen
-			scaleX = (windowWidth - scaleW)/2.0f;
-			scaleY = (windowHeight - scaleH)/2.0f;
-
-			Input::offsetY = scaleY;
-
-			if(scale != 0)
+			float fit = std::min(0.8f * usable.w / this->width, 0.8f * usable.h / this->height);
+			if(fit < 1.0f)
 			{
-				Input::mouseScale = 1.0f/scale;
+				windowWidth = int(this->width * fit);
+				windowHeight = int(this->height * fit);
 			}
 		}
 
-		
-		if(!display) 
-		{
-			fprintf(stderr, "failed to create display!\n");
+		SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+		if(fullscreen)
+			flags |= SDL_WINDOW_FULLSCREEN;
+
+		if(!SDL_CreateWindowAndRenderer("Toast Engine", windowWidth, windowHeight, flags, &window, &renderer))
 			return false;
-		}
 
-		event_queue = al_create_event_queue();
-	    if(!event_queue) 
-		{
-		   fprintf(stderr, "failed to create event_queue!\n");
-		   al_destroy_display(display);
-		   return false;
-	    }
+		if(!SDL_SetRenderLogicalPresentation(renderer, this->width, this->height, SDL_LOGICAL_PRESENTATION_LETTERBOX))
+			return false;
 
-		// registering event queue
-		al_register_event_source(event_queue, al_get_display_event_source(display));
-		al_register_event_source(event_queue, al_get_mouse_event_source());
-		al_register_event_source(event_queue, al_get_keyboard_event_source());
-
-		// clearing window with a new color
-		//al_clear_to_color(al_map_rgb(0,255,0));
-		//al_clear_to_color(al_map_rgb(255,255,255));
-		// present buffer
-		//al_flip_display();
+		// without it the loop renders as fast as the CPU allows;
+		// some drivers refuse it, and the game still runs then
+		SDL_SetRenderVSync(renderer, 1);
 
 		// Init Input
 		for(unsigned int i=0; i < TOAST_KEY_MAX; i++)
@@ -335,17 +205,12 @@ namespace Toast
 			Input::downKeys[i] = false;
 		}
 
-		/*inputManager = new InputManager();
-		if(!inputManager)
-			return false;*/
-
 		// initializing random number generator
 		random = new TFRandom();
 
 		if(random->GetRandomSeed() == 1)
 		{
 			random->Randomize();
-			//std::cout << "RANDOMIZING\n";
 		}
 
 		TF::camera = new Point();
@@ -360,24 +225,10 @@ namespace Toast
 	void Engine::checkEvents()
 	{
 		EventManager::checkEvents();
-		/*if(event->type == SDL_QUIT)
-			this->isRunning = false;*/
 	}
 
 	void Engine::onExit()
 	{
 		this->isRunning = false;
-	}
-
-	void Engine::cleanUp()
-	{
-		// destroying rendering buffer
-		al_destroy_bitmap(buffer);
-		al_destroy_display(display);
-
-		//SDL_FreeSurface(displaySurface);
-		/*SDL_DestroyRenderer(this->renderer);
-		SDL_DestroyWindow(this->screen);
-		SDL_Quit();*/
 	}
 }

@@ -12,7 +12,7 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastEngine.h"
 #include "ToastRandom.h"
 
-#include <iostream>
+#include <cmath>
 
 namespace Toast
 {
@@ -41,7 +41,8 @@ namespace Toast
 
 	Texture* TF::getTexture(std::string str)
 	{
-		return (Texture*)(TF::textures[str]);
+		std::map<std::string, Texture*>::iterator it = TF::textures.find(str);
+		return it != TF::textures.end() ? it->second : NULL;
 	}
 
 	void TF::addTexture(std::string str, Texture* tex)
@@ -55,11 +56,10 @@ namespace Toast
 
 		for(i = TF::textures.begin(); i != TF::textures.end(); i++)
 		{
-			std::cout << "[TF destroy] deleting texture " << i->first << "\n";
-
-			// delete texture
 			delete i->second;
 		}
+
+		TF::textures.clear();
 	}
 
 	void TF::setCamera(float x, float y)
@@ -71,6 +71,15 @@ namespace Toast
 	void TF::resetCamera()
 	{
 		TF::camera->x = TF::camera->y = 0;
+	}
+
+	std::string TF::resolvePath(const std::string& path)
+	{
+		bool absolute = !path.empty() && (path[0] == '/' || path[0] == '\\' || (path.size() > 1 && path[1] == ':'));
+		const char* base = SDL_GetBasePath();
+		if(absolute || !base)
+			return path;
+		return std::string(base) + path;
 	}
 
 	float TF::random()

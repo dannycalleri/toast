@@ -16,12 +16,14 @@ namespace Toast
 {
 	Image::Image(const std::string& fileName)
 	{
-		Graphic::Graphic();
 		this->texture=0;
 		if(fileName != "")
 			this->texture = Graphics::LoadTexture(fileName);
-		this->width = this->texture->getWidth();
-		this->height = this->texture->getHeight();
+		if(this->texture)
+		{
+			this->width = this->texture->getWidth();
+			this->height = this->texture->getHeight();
+		}
 		this->angle = 0.0f;
 		this->scale = 0.0f;
 		this->scaleX = 0.0f;

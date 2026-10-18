@@ -10,7 +10,6 @@
 #include "ToastCanvas.h"
 #include "ToastEntity.h"
 #include "ToastText.h"
-#include <iostream>
 //#include <string>
 
 namespace Toast
@@ -77,16 +76,6 @@ namespace Toast
 		// calling super-class update
 		World::update();
 
-		if(Input::leftMousePressed)
-		{
-			std::cout << "[PRESSED]\n";
-		}
-
-		if(Input::leftMouseDown)
-		{
-			std::cout << "[DOWN]\n";
-		}
-
 		if(Input::down(TOAST_KEY_UP))
 		{
 			goblin1->y -= 300 * TF::elapsed;
@@ -144,11 +133,6 @@ namespace Toast
 		{
 			goblin2->graphic->flipped = true;
 			dir=1;
-		}
-
-		if(goblin1->collideRect(goblin1->x, goblin1->y, goblin2->x, goblin2->y, goblin2->width, goblin2->height))
-		{
-			std::cout << "GOBLINS COLLIDING!\n";
 		}
 
 		demoText->point->x = TF::camera->x;

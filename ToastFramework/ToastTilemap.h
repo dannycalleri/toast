@@ -11,42 +11,44 @@ Copyright (C) 2013 Danny Calleri
 #define TOASTTILEMAP_H
 
 #include "ToastCommon.h"
-//#include "ToastGraphic.h"
-#include "ToastCanvas.h"
+#include "ToastGraphic.h"
 #include <string>
+#include <vector>
 
 namespace Toast
 {
-	class Tilemap : public Canvas
+	class Tilemap : public Graphic
 	{
 	public:
 		Tilemap(const std::string& fileName, unsigned int width, unsigned int height, unsigned int tileWidth, unsigned int tileHeight);
+		Tilemap(const Tilemap& rhs);
 		virtual ~Tilemap();
 
 		void setTile(unsigned int column, unsigned int row, unsigned int index = 0);
 		void loadFromString(const std::string& _str, const std::string& columnSep = ",", const std::string& rowSep = "\n");
 
+		virtual void render();
+
+		// the tiles [first, end) of a row or column of count tiles that
+		// overlap a view of viewSize pixels, when the map starts at offset
+		static void visibleRange(float offset, float viewSize, unsigned int tileSize, unsigned int count,
+								 unsigned int& first, unsigned int& end);
 
 	private:
+		Tilemap& operator=(const Tilemap&);
 
-		// Tilemap data - width and height of the level
-		unsigned int width;
-		unsigned int height;
 		unsigned int columns;
 		unsigned int rows;
+		unsigned int tileWidth;
+		unsigned int tileHeight;
 
-		// Tileset data - width, height of the tileset file
 		Texture* tileset;
-		unsigned int setRows;
 		unsigned int setColumns;
 		unsigned int setCount;
 
-		Rectangle* tile;
-
-		// destination point on
-		// the rendering buffer
-		Point* point;
-
+		// tileset index per cell, row by row; EMPTY where no tile was set
+		std::vector<int> tiles;
+		static constexpr int EMPTY = -1;
 	};
 }
 
