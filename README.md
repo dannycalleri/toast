@@ -12,7 +12,7 @@ possible, and for learning C++ while doing what you love: making games.
 
 <p>
   <img src="docs/demo.png" alt="The DEMO game: two animated goblins in a cave" width="49%">
-  <img src="docs/roguelike.png" alt="The ROGUELIKE game: four generated rooms joined by their doors" width="49%">
+  <img src="docs/roguelike.png" alt="Cat Crypt: the kid spits at crazy cats in a crypt room, with hearts, the cat count and a minimap above" width="49%">
 </p>
 
 Features
@@ -20,16 +20,22 @@ Features
 - **FlashPunk-style structure**: `World`, `Entity` and `Graphic`, with global access
   to the engine, the current world, the camera and the frame time through `TF`.
 - **Graphics**: images, animated sprite sheets (`Spritemap`), tilemaps that draw
-  only the tiles on screen, TrueType text, and off-screen canvases. Alpha,
+  only the tiles on screen, TrueType text, and off-screen canvases. Alpha, scale,
   rotation and flipping are built in.
+- **Particles**: an `Emitter` in the style of FlashPunk's. Define named particle
+  types on frames of one texture, then `emit` them; each particle moves in a
+  straight line with gravity while its alpha and scale change over its life.
 - **Camera** with per-graphic scroll factors for parallax.
-- **Any window size**: the game draws at a fixed resolution that you choose, and
-  Toast scales it to the window or screen with black bars, sharp on HiDPI and
+- **Any window size**: the game draws at a fixed resolution that you choose. The
+  window opens at the largest whole multiple of it that fits in 80% of the screen, and Toast
+  scales it to any window size or the full screen with black bars, sharp on HiDPI and
   Retina displays. Mouse coordinates are always in game coordinates. Pixel-art
   games call `setPixelArt(true)` in their `Engine` constructor, before loading any
   art, to get nearest-neighbour scaling.
 - **Input**: keyboard (`TOAST_KEY_*` codes; "pressed this frame" and "held down")
   and mouse.
+- **Safe removal**: `World::removeLater` lets an entity remove itself, or another
+  one, while the world is updating.
 - **Collision**: test an entity's hitbox against a rectangle with
   `Entity::collideRect`, and store solid tiles in a `Grid` you query with `getTile`.
   Collision between `Mask` types (`Hitbox` against `Hitbox` or `Grid`) is not
@@ -60,11 +66,38 @@ The build copies each game's assets next to its executable.
 
 ### The sample games
 
-| | DEMO | ROGUELIKE |
+| | DEMO | ROGUELIKE (Cat Crypt) |
 |---|---|---|
-| What it shows | Sprites, animation, a scrolling tilemap, text, the debug console | A maze of rooms generated in linear time from ASCII room templates |
-| Controls | Arrow keys move the goblin, WASD moves the camera | G generates a dungeon, WASD moves the camera |
+| What it shows | Sprites, animation, a scrolling tilemap, text, the debug console | A small shooter: a generated maze, particles, screen shake, a HUD |
+| Controls | Arrow keys move the goblin, WASD moves the camera | WASD walks; hold the left mouse button (aim with the mouse) or an arrow key to spit; R starts a new crypt |
 | Both | ENTER toggles the debug console (drag to select, Shift+drag to move), ESC quits | |
+
+### Cat Crypt
+
+<img src="docs/roguelike-spawn.png" alt="Glowing cracks in the floor show where four cats are about to dig out" width="49%" align="right">
+
+An EarthBound-style kid is lost in a crypt full of crazy cats. Each room is one
+screen. When he walks into a room for the first time, its doors close, and glowing
+cracks in the floor show where 2 to 5 cats will dig out, more the deeper you go.
+Orange cats zig-zag straight at him; grey ones crouch for a moment, then pounce.
+Three hits kill a cat in a burst of fur. Clear every room and the last cat drops
+the key to the golden door of the locked room: get there to escape. The kid has
+three hearts.
+
+- **The maze** comes from the *Growing Tree* algorithm on a 9×7 grid of rooms,
+  stopped at 12 rooms. Every step adds a room or retires a cell, so it ends in at
+  most 2N steps and never retries; a test builds a 10,000-room maze in under 50 ms.
+  The locked room is the farthest room with a single door.
+- **Rooms** are written as ASCII templates in `ROGUELIKE/rooms/rooms.txt`, with
+  walls, rocks, pots, crates, bones, grass and cat spawn points. A test checks that
+  props never cut off any part of a room from its doors.
+- **Cats** follow the shortest path round walls (a BFS over the room's tiles)
+  whenever they cannot see the kid.
+- **The pixel art** is text too: `ROGUELIKE/art/*.txt` hold a 16-colour palette and
+  frames written as characters, and `cmake --build build --target roguelike_art`
+  turns them into the PNGs in `ROGUELIKE/assets/`. The PNGs are committed, and a
+  test fails when one no longer matches its source.
+<br clear="right">
 
 Make your own game
 --------------------------------------
@@ -139,7 +172,8 @@ Project layout
 |---|---|
 | `ToastFramework/` | The framework, built as the `toast` static library |
 | `DEMO/` | The minimal sample game |
-| `ROGUELIKE/` | The maze sample (`rooms/rooms.txt` holds the room templates, `art/` the pixel art sources) |
+| `ROGUELIKE/` | Cat Crypt (`rooms/rooms.txt` holds the room templates, `art/` the pixel art sources) |
+| `tools/` | `pixelart`, which turns the ASCII art into PNG sheets |
 | `tests/` | Unit and integration tests |
 
 Tests

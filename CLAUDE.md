@@ -8,8 +8,8 @@ Toast Framework: a 2D C++17 game framework modeled on FlashPunk (AS3), built on 
 
 - `ToastFramework/` — the framework, built as the static library `toast`.
 - `DEMO/` — minimal sample game; the intended template for new games.
-- `ROGUELIKE/` — "Cat Crypt", the larger sample. `Maze` builds the level with the Growing Tree algorithm (O(N), no retries; the locked room is the farthest one-door room), `Level` turns it into `Room`s, and each `Room` fills its 20x12 tiles from an ASCII template in `ROGUELIKE/rooms/rooms.txt` (its header documents the format). Its pixel art is written as text in `ROGUELIKE/art/` and turned into the committed `assets/*.png` by `cmake --build build --target roguelike_art` (the `pixelart` tool in `tools/`); a test fails when a PNG no longer matches its source. It builds as the `roguelike_game` library (everything but `main.cpp`, so tests can link it) plus the `roguelike` executable.
-- `tests/` — a tiny self-contained test runner (`ToastTest.h`) with two executables: `toast_tests` (framework) and `roguelike_tests` (maze generation, room templates, rooms, pixel art).
+- `ROGUELIKE/` — "Cat Crypt", the larger sample: a one-screen-per-room shooter. `Maze` builds the level with the Growing Tree algorithm (O(N), no retries; the locked room is the farthest one-door room), `Level` turns it into `Room`s, and each `Room` fills its 20x12 tiles from an ASCII template in `ROGUELIKE/rooms/rooms.txt` (its header documents the format). `GameWorld` runs the game: the room states (unvisited, fighting, cleared), the camera slide between rooms, `settleCats` after each world update (dead cats out, touches hurt the kid), the key, the locked door and the endings; `Player` (shoots `Bullet`s from the mouth), `Cat` (spawn anticipation, Zoomie/Pouncer, BFS path round walls via `Room::nextStep`), `Hud`, `ScreenShake` and `Effects` (the particle types) do the rest. A new game clears the world with `removeAll`. Its pixel art is written as text in `ROGUELIKE/art/` and turned into the committed `assets/*.png` by `cmake --build build --target roguelike_art` (the `pixelart` tool in `tools/`); a test fails when a PNG no longer matches its source. It builds as the `roguelike_game` library (everything but `main.cpp`, so tests can link it) plus the `roguelike` executable.
+- `tests/` — a tiny self-contained test runner (`ToastTest.h`) with two executables: `toast_tests` (framework) and `roguelike_tests` (maze generation, room templates, rooms, pixel art, and headless gameplay: the kid, bullets, cats, room states, the key and locked door, the HUD).
 
 ## Building and testing
 
@@ -19,7 +19,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure        # all tests
 ctest --test-dir build -R input_keymap            # one test (or: build/tests/toast_tests input_keymap)
-./build/demo                                       # or ./build/roguelike (G generates a maze)
+./build/demo                                       # or ./build/roguelike (WASD walks, mouse or arrows shoot, R new maze)
 ```
 
 - Sanitizers: `-DTOAST_SANITIZERS=undefined` (or `address,undefined`). On this macOS 26 / Apple clang 17 machine ASan hangs at process start even for an empty `main`, so use UBSan only here.
