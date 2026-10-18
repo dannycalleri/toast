@@ -62,7 +62,10 @@ foreach(name
         roguelike_spawning_cat_is_harmless_and_bullets_pass_over_it
         roguelike_pouncer_crouches_before_it_leaps
         roguelike_zoomie_closes_in_on_the_kid
-        roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet
+        roguelike_cat_count_grows_with_distance
+        roguelike_entering_a_new_room_closes_it_and_spawns_cats
+        roguelike_room_opens_when_its_last_cat_dies_and_stays_clear
+        roguelike_locked_room_spawns_nothing
         roguelike_kid_is_hurt_only_by_active_cats
         roguelike_two_touches_within_a_second_cost_half_a_heart_once
         roguelike_last_half_heart_ends_the_game_and_r_restarts

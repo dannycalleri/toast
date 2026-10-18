@@ -542,32 +542,144 @@ TOAST_TEST(roguelike_zoomie_closes_in_on_the_kid)
 	delete engine;
 }
 
-TOAST_TEST(roguelike_entering_a_new_room_spawns_cats_that_are_not_active_yet)
+namespace
+{
+	GameWorld* startEastGame(Engine*& engine)
+	{
+		GameWorld* world = startGame(engine);
+		unsigned int seed = 1;
+		world->newGame(seed);
+		while(!world->level.maze.hasDoor(world->level.maze.start, RIGHT) ||
+			  world->level.maze.neighbour(world->level.maze.start, RIGHT) == world->level.maze.locked)
+			world->newGame(++seed);
+		return world;
+	}
+
+	void walkThroughDoor(GameWorld* world, Direction d)
+	{
+		Room* room = world->room;
+		int column, row;
+		Room::doorTile(d, column, row);
+		bool horizontal = d == UP || d == DOWN;
+		world->player->x = room->x + column * Room::TILE + (horizontal ? Room::TILE : 2);
+		world->player->y = room->y + row * Room::TILE + (horizontal ? 4 : Room::TILE + 4);
+		TF::elapsed = 0.05f;
+		world->update();
+		for(int i = 0; i < 10 && world->sliding(); i++)
+			world->update();
+	}
+}
+
+TOAST_TEST(roguelike_cat_count_grows_with_distance)
+{
+	CHECK(GameWorld::catCount(1, 6, 6) == GameWorld::MIN_CATS);
+	CHECK(GameWorld::catCount(6, 6, 6) == GameWorld::MAX_CATS);
+	int previous = 0;
+	for(int d = 1; d <= 6; d++)
+	{
+		int count = GameWorld::catCount(d, 6, 6);
+		CHECK(count >= previous);
+		CHECK(count >= GameWorld::MIN_CATS && count <= GameWorld::MAX_CATS);
+		previous = count;
+	}
+	CHECK(GameWorld::catCount(6, 6, 3) == 3);
+	CHECK(GameWorld::catCount(1, 1, 6) == GameWorld::MIN_CATS);
+}
+
+TOAST_TEST(roguelike_entering_a_new_room_closes_it_and_spawns_cats)
 {
 	Engine* engine;
-	GameWorld* world = startGame(engine);
-	unsigned int seed = 1;
-	world->newGame(seed);
-	while(!world->level.maze.hasDoor(world->level.maze.start, RIGHT) ||
-		  world->level.maze.neighbour(world->level.maze.start, RIGHT) == world->level.maze.locked)
-		world->newGame(++seed);
+	GameWorld* world = startEastGame(engine);
 	CHECK(world->cats.empty());
-
-	Room* start = world->room;
 	Room* east = world->level.roomAt(world->level.maze.neighbour(world->level.maze.start, RIGHT));
-	world->player->x = start->x + (Room::COLUMNS - 1) * Room::TILE + 2;
-	world->player->y = start->y + Room::HEIGHT / 2 + 4;
-	TF::elapsed = 0.05f;
-	world->update();
+	walkThroughDoor(world, RIGHT);
+	CHECK(world->room == east);
 
 	size_t points = 0;
 	for(int r = 0; r < RoomTemplates::ROWS; r++)
 		for(int c = 0; c < RoomTemplates::COLUMNS; c++)
 			points += east->layout->at(c, r) == RoomTemplates::SPAWN;
-	CHECK(points > 0);
-	CHECK(!world->cats.empty() && world->cats.size() <= points);
+	CHECK(world->cats.size() >= (size_t)GameWorld::MIN_CATS && world->cats.size() <= (size_t)GameWorld::MAX_CATS);
+	CHECK(world->cats.size() <= points);
 	for(size_t i = 0; i < world->cats.size(); i++)
 		CHECK(!world->cats[i]->active());
+
+	CHECK(world->roomState(east) == GameWorld::FIGHTING);
+	int eastCell = world->level.maze.neighbour(world->level.maze.start, RIGHT);
+	for(int d = UP; d <= RIGHT; d++)
+	{
+		if(!world->level.maze.hasDoor(eastCell, (Direction)d))
+			continue;
+		CHECK(east->door((Direction)d) == DOOR_CLOSED || east->door((Direction)d) == DOOR_LOCKED);
+		CHECK(solidDoorTiles(*east, (Direction)d) == 2);
+	}
+	delete engine;
+}
+
+TOAST_TEST(roguelike_room_opens_when_its_last_cat_dies_and_stays_clear)
+{
+	Engine* engine;
+	GameWorld* world = startEastGame(engine);
+	Room* start = world->room;
+	Room* east = world->level.roomAt(world->level.maze.neighbour(world->level.maze.start, RIGHT));
+	walkThroughDoor(world, RIGHT);
+	runFor(world, Cat::SPAWN_SECONDS + 0.05f);
+	world->player->health = 100;
+
+	std::vector<Cat*> cats = world->cats;
+	for(size_t i = 0; i < cats.size(); i++)
+		for(int hit = 0; hit < Cat::HIT_POINTS; hit++)
+			cats[i]->hit(1, 0);
+	int particles = world->effects->particleCount();
+	runFor(world, 0.1f);
+
+	CHECK(world->cats.empty());
+	CHECK(world->roomState(east) == GameWorld::CLEARED);
+	CHECK(east->door(LEFT) == DOOR_OPEN);
+	CHECK(solidDoorTiles(*east, LEFT) == 0);
+	// dust at the left door, away from where the cats died
+	bool dustAtDoor = false;
+	for(int i = particles; i < world->effects->particleCount(); i++)
+	{
+		float px, py;
+		world->effects->particlePosition(i, px, py);
+		dustAtDoor = dustAtDoor || (SDL_fabsf(px - (east->x + Room::TILE / 2)) < Room::TILE * 2 &&
+									SDL_fabsf(py - (east->y + Room::HEIGHT / 2)) < Room::TILE * 2);
+	}
+	CHECK(dustAtDoor);
+
+	walkThroughDoor(world, LEFT);
+	CHECK(world->room == start);
+	CHECK(world->cats.empty());
+	CHECK(start->door(RIGHT) == DOOR_OPEN);
+	walkThroughDoor(world, RIGHT);
+	CHECK(world->room == east);
+	CHECK(world->cats.empty());
+	delete engine;
+}
+
+TOAST_TEST(roguelike_locked_room_spawns_nothing)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	const Maze& maze = world->level.maze;
+	CHECK(world->roomState(world->level.startRoom()) == GameWorld::CLEARED);
+	CHECK(world->roomState(world->level.roomAt(maze.locked)) == GameWorld::CLEARED);
+
+	Direction inward = UP;
+	for(int d = UP; d <= RIGHT; d++)
+		if(maze.hasDoor(maze.locked, (Direction)d))
+			inward = opposite((Direction)d);
+	Room* outside = world->level.roomAt(maze.neighbour(maze.locked, opposite(inward)));
+	Room* locked = world->level.roomAt(maze.locked);
+	world->room = outside;
+	world->player->room = outside;
+	outside->setDoor(inward, DOOR_OPEN);
+	walkThroughDoor(world, inward);
+
+	CHECK(world->room == locked);
+	CHECK(world->cats.empty());
+	CHECK(locked->door(opposite(inward)) == DOOR_OPEN);
 	delete engine;
 }
 

@@ -22,6 +22,8 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastInput.h"
 #include "ToastRandom.h"
 #include <cmath>
+#include <algorithm>
+#include <utility>
 
 namespace Toast
 {
@@ -33,6 +35,7 @@ namespace Toast
 		const float KILL_SHAKE = 0.35f;
 		const float HURT_SHAKE = 0.45f;
 		const int FUR_TUFTS = 10;
+		const int DOOR_DUST = 6;
 	}
 
 	GameWorld::GameWorld() :
@@ -95,8 +98,9 @@ namespace Toast
 		if(!level.build(this, seed))
 			return;
 
-		visited.assign(level.maze.width * level.maze.height, false);
-		visited[level.maze.start] = true;
+		roomStates.assign(level.maze.width * level.maze.height, UNVISITED);
+		roomStates[level.maze.start] = CLEARED;
+		roomStates[level.maze.locked] = CLEARED;
 		room = level.startRoom();
 		player = new Player(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2 + Room::TILE * 2);
 		player->room = room;
@@ -159,33 +163,95 @@ namespace Toast
 		}
 		player->Entity::update();
 
-		int cell = next->row * level.maze.width + next->column;
-		if(!visited[cell])
-		{
-			visited[cell] = true;
-			spawnCats(next);
-		}
+		if(roomStates[cellOf(next)] == UNVISITED)
+			fight(next);
 	}
 
-	void GameWorld::spawnCats(Room* where)
+	int GameWorld::catCount(int distance, int maxDistance, int spawnPoints)
 	{
-		int cell = where->row * level.maze.width + where->column;
-		if(cell == level.maze.locked)
-			return;
+		int count = MIN_CATS;
+		if(maxDistance > 1 && distance > 1)
+			count += (int)std::round((float)(MAX_CATS - MIN_CATS) * (distance - 1) / (maxDistance - 1));
+		if(count > MAX_CATS)
+			count = MAX_CATS;
+		return count < spawnPoints ? count : spawnPoints;
+	}
 
+	int GameWorld::cellOf(const Room* where) const
+	{
+		return where->row * level.maze.width + where->column;
+	}
+
+	GameWorld::RoomState GameWorld::roomState(const Room* where) const
+	{
+		return roomStates[cellOf(where)];
+	}
+
+	void GameWorld::fight(Room* where)
+	{
+		std::vector<int> points;
 		for(int r = 0; r < RoomTemplates::ROWS; r++)
 		{
 			for(int c = 0; c < RoomTemplates::COLUMNS; c++)
 			{
-				if(where->layout->at(c, r) != RoomTemplates::SPAWN)
-					continue;
-				float x = where->x + (c + 1) * Room::TILE + Room::TILE / 2;
-				float y = where->y + (r + 1) * Room::TILE + Room::TILE - 4;
-				Cat::Kind kind = TF::random() < 0.5f ? Cat::ZOOMIE : Cat::POUNCER;
-				Cat* cat = new Cat(x, y, kind, where, player, effects, &shake);
-				cats.push_back(cat);
-				add(cat);
+				if(where->layout->at(c, r) == RoomTemplates::SPAWN)
+					points.push_back(r * RoomTemplates::COLUMNS + c);
 			}
+		}
+
+		int maxDistance = 0;
+		for(size_t i = 0; i < level.maze.rooms.size(); i++)
+		{
+			int d = level.maze.distance[level.maze.rooms[i]];
+			if(d > maxDistance)
+				maxDistance = d;
+		}
+		int count = catCount(level.maze.distance[cellOf(where)], maxDistance, (int)points.size());
+		if(count == 0)
+		{
+			roomStates[cellOf(where)] = CLEARED;
+			return;
+		}
+
+		roomStates[cellOf(where)] = FIGHTING;
+		for(int d = UP; d <= RIGHT; d++)
+		{
+			if(where->door((Direction)d) == DOOR_OPEN)
+				where->setDoor((Direction)d, DOOR_CLOSED);
+		}
+
+		for(int i = 0; i < count; i++)
+		{
+			int remaining = (int)points.size() - i;
+			int pick = i + std::min((int)(TF::random() * remaining), remaining - 1);
+			std::swap(points[i], points[pick]);
+			int c = points[i] % RoomTemplates::COLUMNS;
+			int r = points[i] / RoomTemplates::COLUMNS;
+			float x = where->x + (c + 1) * Room::TILE + Room::TILE / 2;
+			float y = where->y + (r + 1) * Room::TILE + Room::TILE - 4;
+			Cat::Kind kind = TF::random() < 0.5f ? Cat::ZOOMIE : Cat::POUNCER;
+			Cat* cat = new Cat(x, y, kind, where, player, effects, &shake);
+			cats.push_back(cat);
+			add(cat);
+		}
+	}
+
+	void GameWorld::clear(Room* where)
+	{
+		roomStates[cellOf(where)] = CLEARED;
+		for(int d = UP; d <= RIGHT; d++)
+		{
+			if(where->door((Direction)d) != DOOR_CLOSED)
+				continue;
+			where->setDoor((Direction)d, DOOR_OPEN);
+
+			int column, row;
+			Room::doorTile((Direction)d, column, row);
+			bool horizontal = d == UP || d == DOWN;
+			float doorX = where->x + (column + (horizontal ? 1 : 0.5f)) * Room::TILE;
+			float doorY = where->y + (row + (horizontal ? 0.5f : 1)) * Room::TILE;
+			for(int puff = 0; puff < DOOR_DUST; puff++)
+				effects->emit(Effects::DIRT_BURST, doorX, doorY);
 		}
 	}
 
@@ -267,6 +333,8 @@ namespace Toast
 
 		World::update();
 		settleCats();
+		if(cats.empty() && roomStates[cellOf(room)] == FIGHTING)
+			clear(room);
 		gameOverText->visible = gameOver();
 		restartText->visible = gameOver();
 		if(gameOver())
