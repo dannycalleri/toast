@@ -23,6 +23,9 @@ foreach(name
         engine_key_pressed_once_down_until_released
         engine_frame_time_is_capped
         engine_window_opens_at_the_largest_whole_scale_that_fits
+        engine_image_defaults_draw_at_full_size_and_opacity
+        engine_image_scale_multiplies_its_drawn_size
+        engine_image_alpha_blends_over_what_is_below
         emitter_adds_one_particle_per_emit
         emitter_particles_expire_after_their_duration
         emitter_particles_move_in_a_straight_line

@@ -4,6 +4,7 @@
 #include "Toast.h"
 #include "ToastCanvas.h"
 #include "ToastFont.h"
+#include "ToastGraphics.h"
 #include "ToastImage.h"
 #include "ToastInput.h"
 #include "ToastText.h"
@@ -235,4 +236,75 @@ TOAST_TEST(engine_window_opens_at_the_largest_whole_scale_that_fits)
 	// smaller than 1x: shrink to 80% and keep the aspect ratio, as before
 	Engine::windowSize(1280, 720, 1000, 1000, width, height);
 	CHECK(width == 800 && height == 450);
+}
+
+namespace
+{
+	Image* whiteImage(int size)
+	{
+		SDL_Surface* surface = SDL_CreateSurface(size, size, SDL_PIXELFORMAT_RGBA8888);
+		SDL_FillSurfaceRect(surface, NULL, SDL_MapSurfaceRGBA(surface, 255, 255, 255, 255));
+		Texture* texture = new Texture();
+		texture->tex = SDL_CreateTextureFromSurface(TF::engine->renderer, surface);
+		texture->setWidth(size);
+		texture->setHeight(size);
+		SDL_DestroySurface(surface);
+		TF::addTexture("white", texture);
+
+		Image* image = new Image("white");
+		image->x = 10;
+		image->y = 10;
+		TF::world->addGraphic(image);
+		return image;
+	}
+
+	void renderWorld()
+	{
+		TF::engine->resetRenderingBuffer();
+		Graphics::Clear(0, 0, 0);
+		TF::world->render();
+	}
+}
+
+TOAST_TEST(engine_image_defaults_draw_at_full_size_and_opacity)
+{
+	Engine* engine = startEngine(64, 64);
+	whiteImage(4);
+	renderWorld();
+	CHECK(pixelAt(10, 10).r == 255);
+	CHECK(pixelAt(13, 13).r == 255);
+	CHECK(pixelAt(14, 13).r == 0);
+	CHECK(pixelAt(13, 14).r == 0);
+	delete engine;
+}
+
+TOAST_TEST(engine_image_scale_multiplies_its_drawn_size)
+{
+	Engine* engine = startEngine(64, 64);
+	Image* image = whiteImage(4);
+
+	image->scale = 2;
+	renderWorld();
+	CHECK(pixelAt(17, 17).r == 255);
+	CHECK(pixelAt(18, 17).r == 0);
+	CHECK(pixelAt(17, 18).r == 0);
+
+	image->scale = 1;
+	image->scaleX = 2;
+	renderWorld();
+	CHECK(pixelAt(17, 13).r == 255);
+	CHECK(pixelAt(18, 13).r == 0);
+	CHECK(pixelAt(13, 14).r == 0);
+	delete engine;
+}
+
+TOAST_TEST(engine_image_alpha_blends_over_what_is_below)
+{
+	Engine* engine = startEngine(64, 64);
+	Image* image = whiteImage(4);
+	image->alpha = 0.5f;
+	renderWorld();
+	SDL_Color c = pixelAt(11, 11);
+	CHECK(c.r > 110 && c.r < 145);
+	delete engine;
 }
