@@ -62,7 +62,7 @@ The build copies each game's assets next to its executable.
 
 | | DEMO | ROGUELIKE |
 |---|---|---|
-| What it shows | Sprites, animation, a scrolling tilemap, text, the debug console | Procedural dungeon generation from rooms made in Ogmo Editor |
+| What it shows | Sprites, animation, a scrolling tilemap, text, the debug console | A maze of rooms generated in linear time from ASCII room templates |
 | Controls | Arrow keys move the goblin, WASD moves the camera | G generates a dungeon, WASD moves the camera |
 | Both | ENTER toggles the debug console (drag to select, Shift+drag to move), ESC quits | |
 
@@ -139,7 +139,7 @@ Project layout
 |---|---|
 | `ToastFramework/` | The framework, built as the `toast` static library |
 | `DEMO/` | The minimal sample game |
-| `ROGUELIKE/` | The dungeon generator sample (`rooms/` holds the Ogmo Editor rooms) |
+| `ROGUELIKE/` | The maze sample (`rooms/rooms.txt` holds the room templates, `art/` the pixel art sources) |
 | `tests/` | Unit and integration tests |
 
 Tests

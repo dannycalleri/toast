@@ -1,7 +1,7 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
@@ -10,70 +10,61 @@ Copyright (C) 2013 Danny Calleri
 #ifndef ROOM_H
 #define ROOM_H
 
-#include "ToastCommon.h"
+#include "Maze.h"
 #include "ToastEntity.h"
-#include <string>
-#include <vector>
-#include "Door.h"
 
 namespace Toast
 {
-	class Door;
-	class GameWorld;
+	class Grid;
+	class Tilemap;
+	struct RoomTemplate;
+
+	enum DoorState { DOOR_NONE, DOOR_OPEN, DOOR_CLOSED, DOOR_LOCKED };
 
 	class Room : public Entity
 	{
 	public:
-		Room(const std::string& filename, GameWorld* gameWorld);
-		Room(const Room& rhs);
+		static const int TILE = 16;
+		static const int COLUMNS = 20;
+		static const int ROWS = 12;
+		static const int WIDTH = COLUMNS * TILE;
+		static const int HEIGHT = ROWS * TILE;
+
+		// indices in assets/tiles.png, in the order of art/tiles.txt
+		enum Tile
+		{
+			FLOOR = 0, FLOOR_CRACKED = 1, FLOOR_PEBBLES = 2, FLOOR_MOSS = 3,
+			WALL_TOP = 4, WALL_BOTTOM = 5, WALL_LEFT = 6, WALL_RIGHT = 7, WALL_CORNER = 8,
+			DOOR_OPEN_TILE = 9, DOOR_CLOSED_TILE = 10, DOOR_LOCKED_TILE = 11,
+			INNER_WALL = 12, ROCK = 13, POT = 14, CRATE = 15, BONES = 16, GRASS = 17
+		};
+
+		// column and row are the room's cell in the maze grid; the room
+		// sits at (column * WIDTH, row * HEIGHT) in the world
+		Room(const RoomTemplate& layout, unsigned char doorMask, int column, int row);
 		virtual ~Room();
 
-		// public methods
-		virtual void update();
+		void setDoor(Direction d, DoorState state);
+		DoorState door(Direction d) const { return doors[d]; }
 
-		bool hasDoor(DoorType type);
-		Door* getDoor(DoorType type);
-		bool isOverlapping();
+		// room tile coordinates; outside the room counts as solid
+		bool isSolid(int column, int row);
+		bool isSolidAt(float worldX, float worldY);
 
-	protected:
-		void loadMap();
-		void calculateBoundingBox();
-		void locateDoors();
-		bool overlapBoxVSBox(Rectangle* other, float otherX, float otherY);
+		// the first of the door's two tiles, in room tile coordinates
+		static void doorTile(Direction d, int& column, int& row);
 
-	public:
+		const RoomTemplate* layout;
 		Tilemap* tilemap;
-		int rowStart;
-		int rowEnd;
-		int colStart;
-		int colEnd;
-		int roomWidth;
-		int roomHeight;
-		std::vector<Door*> doors;
-		float distance;
-		Grid* collisionGrid;
-		Rectangle* box;
+		int column;
+		int row;
 
-		static const int WALL_RIGHT_TILE = 154;
-		static const int WALL_LEFT_TILE = 152;
-		static const int WALL_DOWN_TILE = 52;
-		// 3 tiles for top wall
-		static const int WALL_TOP_TILE1 = 49;
-		static const int WALL_TOP_TILE2 = 50;
-		static const int WALL_TOP_TILE3 = 66;
-		
-		static const int DOOR_LEFT_TOP_TILE1 = 72;
-		static const int DOOR_LEFT_TOP_TILE2 = 51;
-		static const int DOOR_LEFT_TOP_TILE3 = 67;
-		
-		static const int DOOR_RIGHT_TOP_TILE1 = 74;
-		static const int DOOR_RIGHT_TOP_TILE2 = 51;
-		static const int DOOR_RIGHT_TOP_TILE3 = 67;
+	private:
+		Room(const Room&);
+		Room& operator=(const Room&);
 
-	protected:
-		GameWorld* world;
-		std::string filename;
-		Grid* doorsGrid;
+		Grid* solid;
+		DoorState doors[4];
 	};
 }
 

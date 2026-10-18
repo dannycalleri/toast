@@ -1,7 +1,7 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
@@ -21,8 +21,7 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastText.h"
 #include "ToastFont.h"
 
-#include "RoomsManager.h"
-#include "Dungeon.h"
+#include "Room.h"
 
 #include <iostream>
 
@@ -38,8 +37,7 @@ namespace Toast
 		:World()
 	{
 		font = new Font("assets/pixelfont.TTF", 24);
-		roomsManager = new RoomsManager(this);
-		dungeon = new Dungeon(this);
+		level.loadTemplates();
 
 		demoText = new Text("TOAST FRAMEWORK - DEMO");
 		demoText->font = font;
@@ -87,8 +85,6 @@ namespace Toast
 	GameWorld::~GameWorld()
 	{
 		TOAST_SAFE_DELETE(font);
-		TOAST_SAFE_DELETE(roomsManager);
-		TOAST_SAFE_DELETE(dungeon);
 	}
 
 	void GameWorld::update()
@@ -98,8 +94,11 @@ namespace Toast
 
 		if(generateDungeon)
 		{
-			dungeon->destroy();
-			dungeon->generate(10);
+			if(level.build(this, TF::engine->random->Random(0x7fffffff)))
+			{
+				Room* start = level.startRoom();
+				TF::setCamera(start->x - (TF::width - Room::WIDTH) / 2, start->y - (TF::height - Room::HEIGHT) / 2);
+			}
 			generatingText->visible=false;
 			generateDungeon=false;
 		}

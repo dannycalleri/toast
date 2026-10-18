@@ -1,7 +1,7 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
@@ -13,13 +13,10 @@ Copyright (C) 2013 Danny Calleri
 #include "ToastCommon.h"
 #include "ToastWorld.h"
 
-#include <string>
+#include "Level.h"
 
 namespace Toast
 {
-	class RoomsManager;
-	class Dungeon;
-
 	class GameWorld : public World
 	{
 	public:
@@ -33,8 +30,7 @@ namespace Toast
 	public:
 		
 		Font* font;
-		RoomsManager* roomsManager;
-		Dungeon* dungeon;
+		Level level;
 		bool generateDungeon;
 
 		Text* demoText;

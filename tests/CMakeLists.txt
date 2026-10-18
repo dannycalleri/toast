@@ -33,11 +33,11 @@ toast_warnings(roguelike_tests)
 toast_copy_assets(roguelike_tests ${ROGUELIKE_ASSETS})
 
 foreach(name
-        roguelike_every_room_file_loads_with_its_doors
-        roguelike_missing_room_file_gives_an_empty_room
-        roguelike_dungeons_generate_without_overlapping_rooms
-        roguelike_room_copies_do_not_reread_the_room_file
-        roguelike_generation_gives_up_when_no_room_can_be_placed
+        roguelike_room_doors_follow_the_mask
+        roguelike_rocks_are_solid_and_bones_are_not
+        roguelike_maze_rooms_use_several_templates
+        roguelike_locked_room_is_behind_a_locked_door
+        roguelike_level_without_templates_builds_nothing
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze
@@ -54,6 +54,5 @@ foreach(name
         rooms_bad_template_is_skipped_and_logged
         rooms_every_floor_cell_is_reachable_from_every_door)
     add_test(NAME ${name} COMMAND roguelike_tests ${name})
-    # dungeon generation used to retry forever; a hang must fail, not block
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 endforeach()

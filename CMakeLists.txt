@@ -102,10 +102,10 @@ set(ROGUELIKE_ASSETS
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/rooms)
 
-# everything but main(), so the tests can drive the dungeon generator
+# everything but main(), so the tests can build levels
 add_library(roguelike_game STATIC
-    ROGUELIKE/Dungeon.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp
-    ROGUELIKE/Maze.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomTemplates.cpp ROGUELIKE/RoomsManager.cpp)
+    ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp ROGUELIKE/Level.cpp
+    ROGUELIKE/Maze.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomTemplates.cpp)
 target_include_directories(roguelike_game PUBLIC ROGUELIKE)
 target_link_libraries(roguelike_game PUBLIC toast)
 toast_warnings(roguelike_game)

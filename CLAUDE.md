@@ -8,8 +8,8 @@ Toast Framework: a 2D C++17 game framework modeled on FlashPunk (AS3), built on 
 
 - `ToastFramework/` — the framework, built as the static library `toast`.
 - `DEMO/` — minimal sample game; the intended template for new games.
-- `ROGUELIKE/` — larger sample with procedural dungeon generation (`Dungeon`, `RoomsManager`, `Room`), rooms authored as Ogmo Editor files in `ROGUELIKE/rooms/` (`.oep`/`.oel`, parsed with rapidxml; collision and door layers are bitstrings read by `Grid::loadFromString` with an empty column separator). It builds as the `roguelike_game` library (everything but `main.cpp`, so tests can link it) plus the `roguelike` executable.
-- `tests/` — a tiny self-contained test runner (`ToastTest.h`) with two executables: `toast_tests` (framework) and `roguelike_tests` (room loading, dungeon generation).
+- `ROGUELIKE/` — "Cat Crypt", the larger sample. `Maze` builds the level with the Growing Tree algorithm (O(N), no retries; the locked room is the farthest one-door room), `Level` turns it into `Room`s, and each `Room` fills its 20x12 tiles from an ASCII template in `ROGUELIKE/rooms/rooms.txt` (its header documents the format). Its pixel art is written as text in `ROGUELIKE/art/` and turned into the committed `assets/*.png` by `cmake --build build --target roguelike_art` (the `pixelart` tool in `tools/`); a test fails when a PNG no longer matches its source. It builds as the `roguelike_game` library (everything but `main.cpp`, so tests can link it) plus the `roguelike` executable.
+- `tests/` — a tiny self-contained test runner (`ToastTest.h`) with two executables: `toast_tests` (framework) and `roguelike_tests` (maze generation, room templates, rooms, pixel art).
 
 ## Building and testing
 
@@ -19,7 +19,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure        # all tests
 ctest --test-dir build -R input_keymap            # one test (or: build/tests/toast_tests input_keymap)
-./build/demo                                       # or ./build/roguelike (G generates a dungeon)
+./build/demo                                       # or ./build/roguelike (G generates a maze)
 ```
 
 - Sanitizers: `-DTOAST_SANITIZERS=undefined` (or `address,undefined`). On this macOS 26 / Apple clang 17 machine ASan hangs at process start even for an empty `main`, so use UBSan only here.
