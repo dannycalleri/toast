@@ -602,7 +602,11 @@ TOAST_TEST(roguelike_entering_a_new_room_closes_it_and_spawns_cats)
 	CHECK(world->cats.size() >= (size_t)GameWorld::MIN_CATS && world->cats.size() <= (size_t)GameWorld::MAX_CATS);
 	CHECK(world->cats.size() <= points);
 	for(size_t i = 0; i < world->cats.size(); i++)
+	{
 		CHECK(!world->cats[i]->active());
+		// their cracks show where they will come out during the slide in already
+		CHECK(world->cats[i]->graphicsList[1]->point->x == world->cats[i]->x);
+	}
 
 	CHECK(world->roomState(east) == GameWorld::FIGHTING);
 	int eastCell = world->level.maze.neighbour(world->level.maze.start, RIGHT);

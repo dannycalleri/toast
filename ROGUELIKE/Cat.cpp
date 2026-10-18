@@ -94,6 +94,8 @@ namespace Toast
 		addGraphic(sprite);
 
 		setHitbox(10, 6, 5, 6);
+		// cats spawn while the camera slides in, when the world does not update
+		Entity::update();
 	}
 
 	bool Cat::bodyContains(float px, float py) const
