@@ -10,6 +10,7 @@ Copyright (C) 2013 Danny Calleri
 #include "GameWorld.h"
 #include "Cat.h"
 #include "Effects.h"
+#include "Hud.h"
 #include "Key.h"
 #include "Player.h"
 #include "Room.h"
@@ -46,6 +47,7 @@ namespace Toast
 		room(NULL),
 		key(NULL),
 		hasKey(false),
+		hud(NULL),
 		catsLeft(0),
 		freezeTime(0.0f),
 		slideTime(-1)
@@ -62,6 +64,7 @@ namespace Toast
 
 		bigFont = new Font("assets/pixelfont.TTF", 24);
 		smallFont = new Font("assets/pixelfont.TTF", 8);
+		hud = new Hud(this, smallFont);
 		gameOverText = centredText("GAME OVER", bigFont, 100);
 		escapedText = centredText("YOU ESCAPED!", bigFont, 100);
 		restartText = centredText("PRESS R TO TRY A NEW CRYPT", smallFont, 136);
@@ -72,6 +75,7 @@ namespace Toast
 
 	GameWorld::~GameWorld()
 	{
+		delete hud;
 		delete bigFont;
 		delete smallFont;
 	}
@@ -109,6 +113,8 @@ namespace Toast
 		roomStates.assign(level.maze.width * level.maze.height, UNVISITED);
 		roomStates[level.maze.start] = CLEARED;
 		roomStates[level.maze.locked] = CLEARED;
+		seen.assign(level.maze.width * level.maze.height, false);
+		seen[level.maze.start] = true;
 
 		int maxDistance = 0;
 		for(size_t i = 0; i < level.maze.rooms.size(); i++)
@@ -187,6 +193,7 @@ namespace Toast
 		}
 		player->Entity::update();
 
+		seen[cellOf(next)] = true;
 		if(roomStates[cellOf(next)] == UNVISITED)
 			fight(next);
 	}
@@ -380,6 +387,13 @@ namespace Toast
 	}
 
 	void GameWorld::update()
+	{
+		step();
+		if(room)
+			hud->refresh();
+	}
+
+	void GameWorld::step()
 	{
 		if(Input::pressed(TOAST_KEY_ESCAPE))
 			TF::engine->onExit();

@@ -21,6 +21,7 @@ Copyright (C) 2013 Danny Calleri
 namespace Toast
 {
 	class Cat;
+	class Hud;
 	class Key;
 	class Emitter;
 	class Player;
@@ -52,6 +53,7 @@ namespace Toast
 		bool gameOver() const { return player && !player->alive(); }
 		bool escaped() const;
 		RoomState roomState(const Room* room) const;
+		bool visited(int cell) const { return seen[cell]; }
 
 		Level level;
 		Player* player;
@@ -61,6 +63,7 @@ namespace Toast
 		std::vector<Cat*> cats;
 		Key* key;
 		bool hasKey;
+		Hud* hud;
 		int catsLeft;
 		float freezeTime;
 
@@ -77,6 +80,7 @@ namespace Toast
 		Text* centredText(const std::string& line, Font* font, float y);
 
 		std::vector<RoomState> roomStates;
+		std::vector<bool> seen;
 		// per cell: how many cats the room spawns when the kid first enters
 		std::vector<int> roomCats;
 
@@ -85,6 +89,7 @@ namespace Toast
 		void takeKey();
 		void unlockDoor();
 		void showEnding();
+		void step();
 
 		Canvas* hudBand;
 		Font* bigFont;

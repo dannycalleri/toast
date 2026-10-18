@@ -1,10 +1,12 @@
 #include "ToastTest.h"
 #include "HeadlessVideo.h"
+#include "ReadPixel.h"
 #include "Toast.h"
 
 #include "Bullet.h"
 #include "Cat.h"
 #include "GameWorld.h"
+#include "Hud.h"
 #include "Key.h"
 #include "Level.h"
 #include "Player.h"
@@ -23,10 +25,18 @@ using namespace Toast;
 
 namespace
 {
+	// a shown text over the room, not in the HUD band
+	bool endingText(Graphic* graphic)
+	{
+		return dynamic_cast<Text*>(graphic) && graphic->visible && graphic->y >= GameWorld::HUD_HEIGHT;
+	}
+
 	GameWorld* startGame(Engine*& engine)
 	{
 		useHeadlessVideo();
 		engine = new Engine(320, 240);
+		// as the game does, so a sprite's pixels read back unblended
+		engine->setPixelArt(true);
 		GameWorld* world = new GameWorld();
 		TF::world = world;
 		return world;
@@ -743,7 +753,7 @@ TOAST_TEST(roguelike_last_half_heart_ends_the_game_and_r_restarts)
 	CHECK(world->graphicsList.size() > 0);
 	int shownTexts = 0;
 	for(size_t i = 0; i < world->graphicsList.size(); i++)
-		shownTexts += dynamic_cast<Text*>(world->graphicsList[i]) && world->graphicsList[i]->visible;
+		shownTexts += endingText(world->graphicsList[i]);
 	CHECK(shownTexts == 2);
 
 	float catX = cat->x;
@@ -758,7 +768,7 @@ TOAST_TEST(roguelike_last_half_heart_ends_the_game_and_r_restarts)
 	CHECK(world->level.maze.doors != oldDoors || world->level.maze.rooms != oldRooms);
 	CHECK(!world->gameOver());
 	for(size_t i = 0; i < world->graphicsList.size(); i++)
-		CHECK(!dynamic_cast<Text*>(world->graphicsList[i]) || !world->graphicsList[i]->visible);
+		CHECK(!endingText(world->graphicsList[i]));
 	CHECK(world->player->health == Player::MAX_HEALTH);
 	CHECK(world->cats.empty());
 	CHECK(world->room == world->level.startRoom());
@@ -971,7 +981,7 @@ TOAST_TEST(roguelike_key_opens_the_locked_door_and_the_kid_escapes)
 	}
 	int shownTexts = 0;
 	for(size_t i = 0; i < world->graphicsList.size(); i++)
-		shownTexts += dynamic_cast<Text*>(world->graphicsList[i]) && world->graphicsList[i]->visible;
+		shownTexts += endingText(world->graphicsList[i]);
 	CHECK(shownTexts == 2);
 
 	// nothing moves once the kid is out
@@ -987,5 +997,96 @@ TOAST_TEST(roguelike_key_opens_the_locked_door_and_the_kid_escapes)
 	CHECK(!world->escaped());
 	CHECK(!world->hasKey);
 	CHECK(world->room == world->level.startRoom());
+	delete engine;
+}
+
+namespace
+{
+	SDL_Color hudPixel(GameWorld* world, int x, int y)
+	{
+		TF::engine->resetRenderingBuffer();
+		Graphics::Clear(0, 0, 0);
+		world->render();
+		return readGamePixel(TF::engine->renderer, x, y);
+	}
+
+	bool isColour(SDL_Color c, int r, int g, int b)
+	{
+		return c.r == r && c.g == g && c.b == b;
+	}
+
+	// the middle of a maze cell's block on the minimap
+	SDL_Color minimapCell(GameWorld* world, int cell)
+	{
+		return hudPixel(world, Hud::MINIMAP_X + world->level.maze.column(cell) * Hud::CELL_WIDTH + 2,
+						Hud::MINIMAP_Y + world->level.maze.row(cell) * Hud::CELL_HEIGHT + 1);
+	}
+}
+
+TOAST_TEST(roguelike_hud_shows_hearts_key_and_cats_left)
+{
+	Engine* engine;
+	GameWorld* world = startEastGame(engine);
+	world->update();
+
+	// row 4 of a heart frame: red across a full heart, red then dark on a half one
+	const int ROW = 8 + 4;
+	CHECK(isColour(hudPixel(world, 8 + 2 * 10 + 3, ROW), 0xb1, 0x3e, 0x53));
+	world->player->health = 3;
+	world->update();
+	CHECK(isColour(hudPixel(world, 8 + 0 * 10 + 3, ROW), 0xb1, 0x3e, 0x53));
+	CHECK(isColour(hudPixel(world, 8 + 1 * 10 + 2, ROW), 0xb1, 0x3e, 0x53));
+	CHECK(isColour(hudPixel(world, 8 + 1 * 10 + 5, ROW), 0x33, 0x3c, 0x57));
+	CHECK(isColour(hudPixel(world, 8 + 2 * 10 + 3, ROW), 0x33, 0x3c, 0x57));
+
+	CHECK(!isColour(hudPixel(world, 8 + 1, 20 + 4), 0xff, 0xcd, 0x75));
+	world->hasKey = true;
+	world->update();
+	CHECK(isColour(hudPixel(world, 8 + 1, 20 + 4), 0xff, 0xcd, 0x75));
+
+	std::vector<Uint8> before;
+	hudPixel(world, 0, 0);
+	for(int x = 8; x < 80; x++)
+		for(int y = 32; y < 42; y++)
+			before.push_back(readGamePixel(TF::engine->renderer, x, y).r);
+	world->catsLeft--;
+	world->update();
+	std::vector<Uint8> after;
+	hudPixel(world, 0, 0);
+	for(int x = 8; x < 80; x++)
+		for(int y = 32; y < 42; y++)
+			after.push_back(readGamePixel(TF::engine->renderer, x, y).r);
+	CHECK(before != after);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_minimap_grows_as_the_kid_explores)
+{
+	Engine* engine;
+	GameWorld* world = startEastGame(engine);
+	world->update();
+	const Maze& maze = world->level.maze;
+	int east = maze.neighbour(maze.start, RIGHT);
+
+	int draws = world->hud->minimapDraws;
+	CHECK(isColour(minimapCell(world, maze.start), 0xf4, 0xf4, 0xf4));
+	CHECK(isColour(minimapCell(world, east), 0x56, 0x6c, 0x86));
+
+	walkThroughDoor(world, RIGHT);
+	CHECK(isColour(minimapCell(world, east), 0xf4, 0xf4, 0xf4));
+	CHECK(isColour(minimapCell(world, maze.start), 0x94, 0xb0, 0xc2));
+	for(int d = UP; d <= RIGHT; d++)
+	{
+		int next = maze.neighbour(east, (Direction)d);
+		if(!maze.hasDoor(east, (Direction)d) || next == maze.start)
+			continue;
+		SDL_Color c = minimapCell(world, next);
+		CHECK(isColour(c, 0x56, 0x6c, 0x86) || (next == maze.locked && isColour(c, 0xff, 0xcd, 0x75)));
+	}
+
+	int afterEntering = world->hud->minimapDraws;
+	CHECK(afterEntering == draws + 1);
+	runFor(world, 0.5f);
+	CHECK(world->hud->minimapDraws == afterEntering);
 	delete engine;
 }

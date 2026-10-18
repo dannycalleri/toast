@@ -17,7 +17,8 @@ namespace Toast
 	namespace Effects
 	{
 		// frames of fx.png, in the order of art/fx.txt
-		enum Frame { BULLET = 0, SPIT_DROP = 1, SPARK = 2, BIG_SPARK = 3, DUST = 4, BIG_DUST = 5, RING = 6, SHADOW = 7, ORANGE_FUR = 8, GREY_FUR = 9, KEY = 13 };
+		enum Frame { BULLET = 0, SPIT_DROP = 1, SPARK = 2, BIG_SPARK = 3, DUST = 4, BIG_DUST = 5, RING = 6, SHADOW = 7, ORANGE_FUR = 8, GREY_FUR = 9,
+					 HEART = 10, HALF_HEART = 11, EMPTY_HEART = 12, KEY = 13 };
 
 		extern const char* const SPIT;
 		extern const char* const IMPACT;
