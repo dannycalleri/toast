@@ -74,6 +74,8 @@ foreach(name
         roguelike_level_counts_the_cats_of_every_room_before_they_spawn
         roguelike_clearing_a_room_while_others_have_cats_gives_no_key
         roguelike_last_cat_of_the_level_drops_the_key
+        roguelike_locked_door_stays_shut_without_the_key
+        roguelike_key_opens_the_locked_door_and_the_kid_escapes
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze

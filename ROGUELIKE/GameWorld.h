@@ -50,6 +50,7 @@ namespace Toast
 		void newGame(unsigned int seed);
 		bool sliding() const { return slideTime >= 0; }
 		bool gameOver() const { return player && !player->alive(); }
+		bool escaped() const;
 		RoomState roomState(const Room* room) const;
 
 		Level level;
@@ -82,11 +83,14 @@ namespace Toast
 		int spawnPoints(const Room* room) const;
 		void dropKey(float x, float y);
 		void takeKey();
+		void unlockDoor();
+		void showEnding();
 
 		Canvas* hudBand;
 		Font* bigFont;
 		Font* smallFont;
 		Text* gameOverText;
+		Text* escapedText;
 		Text* restartText;
 		float slideTime;
 		float slideFromX;

@@ -63,6 +63,7 @@ namespace Toast
 		bigFont = new Font("assets/pixelfont.TTF", 24);
 		smallFont = new Font("assets/pixelfont.TTF", 8);
 		gameOverText = centredText("GAME OVER", bigFont, 100);
+		escapedText = centredText("YOU ESCAPED!", bigFont, 100);
 		restartText = centredText("PRESS R TO TRY A NEW CRYPT", smallFont, 136);
 
 		if(level.loadTemplates())
@@ -325,6 +326,45 @@ namespace Toast
 		hasKey = true;
 	}
 
+	bool GameWorld::escaped() const
+	{
+		return room && cellOf(room) == level.maze.locked && !sliding();
+	}
+
+	void GameWorld::unlockDoor()
+	{
+		for(int d = UP; d <= RIGHT; d++)
+		{
+			if(room->door((Direction)d) != DOOR_LOCKED)
+				continue;
+
+			int column, row;
+			Room::doorTile((Direction)d, column, row);
+			bool horizontal = d == UP || d == DOWN;
+			float doorX = room->x + column * Room::TILE;
+			float doorY = room->y + row * Room::TILE;
+			// the door is solid and walking stops up to a pixel short of it,
+			// so the kid only touches a door grown by 2 px
+			const float REACH = 2.0f;
+			if(!player->collideRect(player->x, player->y, doorX - REACH, doorY - REACH,
+									Room::TILE * (horizontal ? 2 : 1) + REACH * 2, Room::TILE * (horizontal ? 1 : 2) + REACH * 2))
+				continue;
+
+			room->setDoor((Direction)d, DOOR_OPEN);
+			float middleX = doorX + (horizontal ? Room::TILE : Room::TILE / 2);
+			float middleY = doorY + (horizontal ? Room::TILE / 2 : Room::TILE);
+			for(int i = 0; i < KEY_SPARKLES; i++)
+				effects->emit(Effects::SPARKLE, middleX, middleY);
+		}
+	}
+
+	void GameWorld::showEnding()
+	{
+		gameOverText->visible = gameOver();
+		escapedText->visible = escaped();
+		restartText->visible = gameOver() || escaped();
+	}
+
 	void GameWorld::render()
 	{
 		float shakeX, shakeY;
@@ -349,9 +389,8 @@ namespace Toast
 
 		if(!room)
 			return;
-		gameOverText->visible = gameOver();
-		restartText->visible = gameOver();
-		if(gameOver())
+		showEnding();
+		if(gameOver() || escaped())
 			return;
 
 		if(sliding())
@@ -383,8 +422,9 @@ namespace Toast
 		if(key && player->collideRect(player->x, player->y, key->x - key->originX, key->y - key->originY,
 									  (float)key->width, (float)key->height))
 			takeKey();
-		gameOverText->visible = gameOver();
-		restartText->visible = gameOver();
+		if(hasKey)
+			unlockDoor();
+		showEnding();
 		if(gameOver())
 			return;
 

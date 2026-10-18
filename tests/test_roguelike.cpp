@@ -901,3 +901,91 @@ TOAST_TEST(roguelike_last_cat_of_the_level_drops_the_key)
 	CHECK(world->key == NULL);
 	delete engine;
 }
+
+namespace
+{
+	// puts the kid in the room outside the golden door, then has him walk into it
+	Room* pushAgainstLockedDoor(GameWorld* world, Direction& inward)
+	{
+		const Maze& maze = world->level.maze;
+		for(int d = UP; d <= RIGHT; d++)
+			if(maze.hasDoor(maze.locked, (Direction)d))
+				inward = opposite((Direction)d);
+		Room* outside = world->level.roomAt(maze.neighbour(maze.locked, opposite(inward)));
+		world->room = outside;
+		world->player->room = outside;
+		TF::setCamera(outside->x, outside->y - GameWorld::HUD_HEIGHT);
+
+		int column, row;
+		Room::doorTile(inward, column, row);
+		bool horizontal = inward == UP || inward == DOWN;
+		// one tile in front of the door, lined up with its middle
+		float doorMiddleX = outside->x + column * Room::TILE + (horizontal ? Room::TILE : Room::TILE / 2);
+		float doorMiddleY = outside->y + row * Room::TILE + (horizontal ? Room::TILE / 2 : Room::TILE);
+		world->player->x = doorMiddleX - (inward == LEFT ? -2 : inward == RIGHT ? 2 : 0) * Room::TILE / 2;
+		world->player->y = doorMiddleY + 4 - (inward == UP ? -2 : inward == DOWN ? 2 : 0) * Room::TILE / 2;
+
+		const unsigned int keys[4] = {TOAST_KEY_W, TOAST_KEY_S, TOAST_KEY_A, TOAST_KEY_D};
+		Input::downKeys[keys[inward]] = true;
+		runFor(world, 0.6f);
+		Input::downKeys[keys[inward]] = false;
+		return outside;
+	}
+}
+
+TOAST_TEST(roguelike_locked_door_stays_shut_without_the_key)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	bool seen[4] = {false, false, false, false};
+	for(unsigned int seed = 1; seed <= 12; seed++)
+	{
+		world->newGame(seed);
+		Direction inward = UP;
+		Room* outside = pushAgainstLockedDoor(world, inward);
+		seen[inward] = true;
+		CHECK(outside->door(inward) == DOOR_LOCKED);
+		CHECK(solidDoorTiles(*outside, inward) == 2);
+		CHECK(world->room == outside);
+		CHECK(!world->escaped());
+	}
+	CHECK(seen[UP] && seen[DOWN] && seen[LEFT] && seen[RIGHT]);
+	delete engine;
+}
+
+TOAST_TEST(roguelike_key_opens_the_locked_door_and_the_kid_escapes)
+{
+	Engine* engine;
+	GameWorld* world = startGame(engine);
+	for(unsigned int seed = 1; seed <= 12; seed++)
+	{
+		world->newGame(seed);
+		world->hasKey = true;
+		Direction inward = UP;
+		Room* outside = pushAgainstLockedDoor(world, inward);
+		CHECK(outside->door(inward) == DOOR_OPEN);
+
+		walkThroughDoor(world, inward);
+		CHECK(world->room == world->level.roomAt(world->level.maze.locked));
+		CHECK(world->escaped());
+	}
+	int shownTexts = 0;
+	for(size_t i = 0; i < world->graphicsList.size(); i++)
+		shownTexts += dynamic_cast<Text*>(world->graphicsList[i]) && world->graphicsList[i]->visible;
+	CHECK(shownTexts == 2);
+
+	// nothing moves once the kid is out
+	float kidX = world->player->x;
+	Input::downKeys[TOAST_KEY_A] = true;
+	runFor(world, 0.3f);
+	Input::downKeys[TOAST_KEY_A] = false;
+	CHECK(world->player->x == kidX);
+
+	Input::pressedKeys[TOAST_KEY_R] = true;
+	world->update();
+	Input::pressedKeys[TOAST_KEY_R] = false;
+	CHECK(!world->escaped());
+	CHECK(!world->hasKey);
+	CHECK(world->room == world->level.startRoom());
+	delete engine;
+}
