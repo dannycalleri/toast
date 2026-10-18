@@ -12,30 +12,41 @@ Copyright (C) 2013 Danny Calleri
 
 #include "ToastCommon.h"
 #include "ToastWorld.h"
-
 #include "Level.h"
 
 namespace Toast
 {
+	class Player;
+	class Room;
+
 	class GameWorld : public World
 	{
 	public:
+		static const int HUD_HEIGHT = 48;
+		static const float SLIDE_SECONDS;
+
 		GameWorld();
 		virtual ~GameWorld();
 
-		// overriding methods inherited
-		// from super class
 		virtual void update();
 
-	public:
-		
-		Font* font;
-		Level level;
-		bool generateDungeon;
+		void newGame(unsigned int seed);
+		bool sliding() const { return slideTime >= 0; }
 
-		Text* demoText;
-		Text* pressEnter;
-		Text* generatingText;
+		Level level;
+		Player* player;
+		Room* room;
+
+	private:
+		void showRoom(Room* room);
+		void enterNextRoom(Direction d);
+		// the door of the current room the player stands in, or -1
+		int doorUnderPlayer();
+
+		Canvas* hudBand;
+		float slideTime;
+		float slideFromX;
+		float slideFromY;
 	};
 }
 

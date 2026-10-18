@@ -8,134 +8,140 @@ Copyright (C) 2013 Danny Calleri
 */
 
 #include "GameWorld.h"
-#include "ToastGraphics.h"
-#include "ToastInput.h"
-#include "ToastEngine.h"
-#include "ToastTexture.h"
-#include "ToastImage.h"
-#include "ToastSpritemap.h"
-#include "ToastTilemap.h"
-#include "ToastRandom.h"
-#include "ToastCanvas.h"
-#include "ToastEntity.h"
-#include "ToastText.h"
-#include "ToastFont.h"
-
+#include "Player.h"
 #include "Room.h"
-
-#include <iostream>
-
-#define CAMERA_SPEED 600
-
-//#include <string>
-
-#include "ToastHitbox.h"
+#include "TF.h"
+#include "ToastCanvas.h"
+#include "ToastEngine.h"
+#include "ToastInput.h"
+#include "ToastRandom.h"
 
 namespace Toast
 {
-	GameWorld::GameWorld()
-		:World()
+	const float GameWorld::SLIDE_SECONDS = 0.3f;
+
+	GameWorld::GameWorld() :
+		World(),
+		player(NULL),
+		room(NULL),
+		slideTime(-1)
 	{
-		font = new Font("assets/pixelfont.TTF", 24);
-		level.loadTemplates();
+		hudBand = new Canvas(Room::WIDTH, HUD_HEIGHT, false);
+		hudBand->clear(0x1a, 0x1c, 0x2c);
+		hudBand->scrollX = 0;
+		hudBand->scrollY = 0;
+		addGraphic(hudBand);
 
-		demoText = new Text("TOAST FRAMEWORK - DEMO");
-		demoText->font = font;
-		demoText->updateCanvas();
-		demoText->relative = true;
-		addGraphic(demoText);
-
-		pressEnter = new Text("PRESS [ENTER] for Debug mode");
-		pressEnter->font = font;
-		pressEnter->updateCanvas();
-		pressEnter->y = TF::height - pressEnter->height;
-		pressEnter->relative = true;
-		addGraphic(pressEnter);
-
-		generatingText = new Text("Generating Dungeon...");
-		generatingText->font = font;
-		generatingText->updateCanvas();
-		generatingText->relative = true;
-		addGraphic(generatingText);
-
-		generatingText->x = TF::halfWidth - generatingText->width/2;
-		generatingText->y = TF::halfHeight - generatingText->height/2;
-		generatingText->scrollX = 0;
-		generatingText->scrollY = 0;
-		generatingText->visible=false;
-
-		generateDungeon=false;
-
-		/*Hitbox* hitbox = new Hitbox(30,30,10,10);
-		Hitbox* hitbox2 = new Hitbox(30,30, 10,10);
-		Mask* mask = new Mask();
-		Mask* mask2 = new Mask();
-
-		hitbox->collide(mask);
-		hitbox->collide(hitbox2);
-		mask->collide(mask2);
-		mask->collide(hitbox);
-
-		delete mask;
-		delete hitbox;
-		delete hitbox2;
-		delete mask2;*/
+		if(level.loadTemplates())
+			newGame(TF::engine->random->Random(0x7fffffff));
 	}
 
 	GameWorld::~GameWorld()
 	{
-		TOAST_SAFE_DELETE(font);
+	}
+
+	void GameWorld::newGame(unsigned int seed)
+	{
+		if(player)
+			remove(player);
+		player = NULL;
+		room = NULL;
+		slideTime = -1;
+
+		if(!level.build(this, seed))
+			return;
+
+		room = level.startRoom();
+		player = new Player(room->x + Room::WIDTH / 2, room->y + Room::HEIGHT / 2 + Room::TILE * 2);
+		player->room = room;
+		add(player);
+		showRoom(room);
+	}
+
+	void GameWorld::showRoom(Room* shown)
+	{
+		TF::setCamera(shown->x, shown->y - HUD_HEIGHT);
+	}
+
+	int GameWorld::doorUnderPlayer()
+	{
+		for(int d = UP; d <= RIGHT; d++)
+		{
+			if(room->door((Direction)d) != DOOR_OPEN)
+				continue;
+			int column, row;
+			Room::doorTile((Direction)d, column, row);
+			bool horizontal = d == UP || d == DOWN;
+			float doorX = room->x + column * Room::TILE;
+			float doorY = room->y + row * Room::TILE;
+			float doorWidth = Room::TILE * (horizontal ? 2 : 1);
+			float doorHeight = Room::TILE * (horizontal ? 1 : 2);
+			// strict overlap: walking along the wall past a door touches it without entering
+			float left = player->x - player->originX;
+			float top = player->y - player->originY;
+			if(left < doorX + doorWidth && left + player->width > doorX &&
+			   top < doorY + doorHeight && top + player->height > doorY)
+				return d;
+		}
+		return -1;
+	}
+
+	void GameWorld::enterNextRoom(Direction d)
+	{
+		Room* next = level.roomAt(level.maze.neighbour(room->row * level.maze.width + room->column, d));
+		if(!next)
+			return;
+
+		slideFromX = TF::camera->x;
+		slideFromY = TF::camera->y;
+		slideTime = 0;
+		room = next;
+		player->room = next;
+		player->active = false;
+
+		// just inside the door the kid came through, clear of its tiles
+		float middleX = next->x + Room::WIDTH / 2;
+		float middleY = next->y + Room::HEIGHT / 2 + player->height;
+		switch(d)
+		{
+		case UP:    player->x = middleX; player->y = next->y + (Room::ROWS - 2) * Room::TILE - 1; break;
+		case DOWN:  player->x = middleX; player->y = next->y + 2 * Room::TILE + player->originY; break;
+		case LEFT:  player->x = next->x + (Room::COLUMNS - 2) * Room::TILE - player->originX - 1; player->y = middleY; break;
+		case RIGHT: player->x = next->x + 2 * Room::TILE + player->originX; player->y = middleY; break;
+		}
+		player->Entity::update();
 	}
 
 	void GameWorld::update()
 	{
-		// calling super-class update
+		if(Input::pressed(TOAST_KEY_ESCAPE))
+			TF::engine->onExit();
+
+		if(Input::pressed(TOAST_KEY_R))
+			newGame(TF::engine->random->Random(0x7fffffff));
+
+		if(!room)
+			return;
+
+		if(sliding())
+		{
+			slideTime += TF::elapsed;
+			float t = slideTime >= SLIDE_SECONDS ? 1.0f : slideTime / SLIDE_SECONDS;
+			float toX = room->x;
+			float toY = room->y - HUD_HEIGHT;
+			TF::setCamera(slideFromX + (toX - slideFromX) * t, slideFromY + (toY - slideFromY) * t);
+			if(t >= 1.0f)
+			{
+				slideTime = -1;
+				player->active = true;
+			}
+			return;
+		}
+
 		World::update();
 
-		if(generateDungeon)
-		{
-			if(level.build(this, TF::engine->random->Random(0x7fffffff)))
-			{
-				Room* start = level.startRoom();
-				TF::setCamera(start->x - (TF::width - Room::WIDTH) / 2, start->y - (TF::height - Room::HEIGHT) / 2);
-			}
-			generatingText->visible=false;
-			generateDungeon=false;
-		}
-
-		if(Input::pressed(TOAST_KEY_G))
-		{
-			generatingText->visible=true;
-			generateDungeon=true;
-		}
-
-		if(Input::down(TOAST_KEY_A)) 
-		{
-			TF::camera->x -= CAMERA_SPEED * TF::elapsed;
-		}
-
-		if(Input::down(TOAST_KEY_D)) 
-		{
-			TF::camera->x += CAMERA_SPEED * TF::elapsed;
-		}
-
-		if(Input::down(TOAST_KEY_W)) {
-			TF::camera->y -= CAMERA_SPEED * TF::elapsed;
-		}
-
-		if(Input::down(TOAST_KEY_S)) 
-		{
-			TF::camera->y += CAMERA_SPEED * TF::elapsed;
-		}
-
-		if(Input::down(TOAST_KEY_ESCAPE)) 
-		{
-			TF::engine->onExit();
-		}
-
-		demoText->point->x = TF::camera->x;
-		demoText->point->y = TF::camera->y;
-		pressEnter->point->x = TF::camera->x;
-		pressEnter->point->y = TF::camera->y;
+		int door = doorUnderPlayer();
+		if(door >= 0)
+			enterNextRoom((Direction)door);
 	}
 }

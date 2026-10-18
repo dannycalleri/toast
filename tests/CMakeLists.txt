@@ -39,6 +39,9 @@ foreach(name
         roguelike_maze_rooms_use_several_templates
         roguelike_locked_room_is_behind_a_locked_door
         roguelike_level_without_templates_builds_nothing
+        roguelike_kid_stops_at_a_wall_and_slides_along_it
+        roguelike_walking_through_a_door_slides_to_the_next_room
+        roguelike_walking_along_a_wall_past_a_door_stays_in_the_room
         maze_has_the_requested_rooms_all_reachable
         maze_doors_are_symmetric_and_lead_to_rooms
         maze_same_seed_gives_the_same_maze
