@@ -105,7 +105,7 @@ set(ROGUELIKE_ASSETS
 # everything but main(), so the tests can drive the dungeon generator
 add_library(roguelike_game STATIC
     ROGUELIKE/Dungeon.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp
-    ROGUELIKE/Maze.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomsManager.cpp)
+    ROGUELIKE/Maze.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomTemplates.cpp ROGUELIKE/RoomsManager.cpp)
 target_include_directories(roguelike_game PUBLIC ROGUELIKE)
 target_link_libraries(roguelike_game PUBLIC toast)
 toast_warnings(roguelike_game)
