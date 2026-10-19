@@ -86,17 +86,6 @@ endfunction()
 
 # --- games -------------------------------------------------------------------
 
-set(DEMO_ASSETS
-    ${CMAKE_SOURCE_DIR}/DEMO/04B_03__.TTF
-    ${CMAKE_SOURCE_DIR}/DEMO/animazione_loop_goblin.png
-    ${CMAKE_SOURCE_DIR}/DEMO/controls.png
-    ${CMAKE_SOURCE_DIR}/DEMO/tile_caverna.png)
-
-add_executable(demo DEMO/main.cpp DEMO/Game.cpp DEMO/GameWorld.cpp)
-target_link_libraries(demo PRIVATE toast)
-toast_warnings(demo)
-toast_copy_assets(demo ${DEMO_ASSETS})
-
 set(ROGUELIKE_ASSETS
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/04B_03__.TTF
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets

@@ -7,8 +7,8 @@ Copyright (C) 2013 Danny Calleri
 ==========================================================================
 */
 
-#ifndef GAMEDEMO_H
-#define GAMEDEMO_H
+#ifndef GAME_H
+#define GAME_H
 
 #include "Toast.h"
 

@@ -1,7 +1,7 @@
 add_executable(toast_tests test_main.cpp test_emitter.cpp test_input.cpp test_tf.cpp test_grid.cpp test_tilemap.cpp test_engine.cpp test_world.cpp)
 target_link_libraries(toast_tests PRIVATE toast)
 toast_warnings(toast_tests)
-toast_copy_assets(toast_tests ${DEMO_ASSETS})
+toast_copy_assets(toast_tests ${ROGUELIKE_ASSETS})
 
 foreach(name
         grid_out_of_range_tiles_are_ignored

@@ -49,7 +49,7 @@ TOAST_TEST(engine_loads_assets_and_renders)
 
 	CHECK(TF::font && TF::font->getHandle());
 
-	Image* image = new Image("controls.png");
+	Image* image = new Image("assets/kid.png");
 	CHECK(image->texture != NULL);
 	CHECK(image->width > 0 && image->height > 0);
 	TF::world->addGraphic(image);
@@ -136,7 +136,6 @@ TOAST_TEST(engine_text_is_drawn_inside_its_canvas)
 {
 	Engine* engine = startEngine(320, 240);
 
-	// placed like DEMO's "PRESS [ENTER]" line, at the bottom of the screen
 	Text* text = new Text("TOAST");
 	text->y = TF::height - text->height;
 	TF::world->addGraphic(text);

@@ -10,9 +10,8 @@ and Windows on top of [SDL3](https://libsdl.org).
 It's perfect if you want to switch from AS3 to C++ in the most painless way
 possible, and for learning C++ while doing what you love: making games.
 
-<p>
-  <img src="docs/demo.png" alt="The DEMO game: two animated goblins in a cave" width="49%">
-  <img src="docs/roguelike.png" alt="Cat Crypt: the kid spits at crazy cats in a crypt room, with hearts, the cat count and a minimap above" width="49%">
+<p align="center">
+  <img src="docs/roguelike.png" alt="Cat Crypt: the kid spits at crazy cats in a crypt room, with hearts, the cat count and a minimap above" width="640">
 </p>
 
 Features
@@ -55,24 +54,27 @@ macOS (Homebrew):
     brew install cmake sdl3 sdl3_image sdl3_ttf
     cmake -B build
     cmake --build build
-    ./build/demo
     ./build/roguelike
 
 Linux and Windows: install SDL3, SDL3_image and SDL3_ttf with your package manager
 or vcpkg, then run the same CMake commands. If you do not have them, configure with
 `cmake -B build -DTOAST_FETCH_DEPS=ON`, and CMake downloads and builds them for you.
 
-The build copies each game's assets next to its executable.
+The build copies the game's assets next to its executable.
 
-### The sample games
+### The sample game
 
-| | DEMO | ROGUELIKE (Cat Crypt) |
-|---|---|---|
-| What it shows | Sprites, animation, a scrolling tilemap, text, the debug console | A small shooter: a generated maze, particles, screen shake, a HUD |
-| Controls | Arrow keys move the goblin, WASD moves the camera | WASD walks; hold the left mouse button (aim with the mouse) or an arrow key to spit; R starts a new crypt |
-| Both | ENTER toggles the debug console (drag to select, Shift+drag to move), ESC quits | |
+`ROGUELIKE/` holds Cat Crypt, a small shooter that uses most of the framework.
 
-### Cat Crypt
+| Key | What it does |
+|---|---|
+| WASD | Walk |
+| Left mouse button (aim with the mouse), or an arrow key | Spit |
+| R | Start a new crypt |
+| ENTER | Toggle the debug console (drag to select, Shift+drag to move) |
+| ESC | Quit |
+
+### How Cat Crypt works
 
 <img src="docs/roguelike-spawn.png" alt="Glowing cracks in the floor show where four cats are about to dig out" width="49%" align="right">
 
@@ -160,18 +162,17 @@ add_executable(mygame MyGame/main.cpp)
 target_link_libraries(mygame PRIVATE toast)
 toast_copy_assets(mygame
     ${CMAKE_SOURCE_DIR}/MyGame/player.png
-    ${CMAKE_SOURCE_DIR}/DEMO/04B_03__.TTF)
+    ${CMAKE_SOURCE_DIR}/ROGUELIKE/04B_03__.TTF)
 ```
 
 The world owns what you add to it: `World::remove()` and the world's destructor
-delete entities and graphics. The `DEMO` directory is a good place to start from.
+delete entities and graphics. Cat Crypt in `ROGUELIKE/` shows a complete game.
 
 Project layout
 --------------------------------------
 | Directory | Contents |
 |---|---|
 | `ToastFramework/` | The framework, built as the `toast` static library |
-| `DEMO/` | The minimal sample game |
 | `ROGUELIKE/` | Cat Crypt (`rooms/rooms.txt` holds the room templates, `art/` the pixel art sources) |
 | `tools/` | `pixelart`, which turns the ASCII art into PNG sheets |
 | `tests/` | Unit and integration tests |
