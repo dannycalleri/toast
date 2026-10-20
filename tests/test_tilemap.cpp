@@ -1,5 +1,6 @@
 #include "ToastTest.h"
 #include "HeadlessVideo.h"
+#include "ReadPixel.h"
 #include "Toast.h"
 #include "ToastTexture.h"
 #include "ToastTilemap.h"
@@ -49,12 +50,7 @@ namespace
 		Graphics::Clear(0, 0, 0);
 		TF::world->render();
 
-		SDL_Color color = {0, 0, 0, 0};
-		SDL_Rect rect = {x, y, 1, 1};
-		SDL_Surface* surface = SDL_RenderReadPixels(TF::engine->renderer, &rect);
-		SDL_ReadSurfacePixel(surface, 0, 0, &color.r, &color.g, &color.b, &color.a);
-		SDL_DestroySurface(surface);
-		return color;
+		return readGamePixel(TF::engine->renderer, x, y);
 	}
 }
 
@@ -87,7 +83,7 @@ TOAST_TEST(tilemap_linear_filtering_does_not_bleed_the_next_atlas_tile)
 	Engine* engine = new Engine(64, 64);
 	TF::world = new World();
 
-	// tile 0 white directly above tile 1 red, as DEMO's atlas stacks its tiles
+	// tile 0 white directly above tile 1 red, as an atlas with several rows stacks them
 	SDL_Surface* surface = SDL_CreateSurface(16, 32, SDL_PIXELFORMAT_RGBA8888);
 	SDL_Rect top = {0, 0, 16, 16};
 	SDL_Rect bottom = {0, 16, 16, 16};
@@ -105,7 +101,7 @@ TOAST_TEST(tilemap_linear_filtering_does_not_bleed_the_next_atlas_tile)
 	tilemap->setTile(0, 0, 0);
 	TF::world->addGraphic(tilemap);
 
-	// DEMO scales its logical size to a smaller window, and smooth
+	// a big game scales its logical size to a smaller window, and smooth
 	// scrolling leaves the camera between pixels
 	SDL_SetWindowSize(engine->window, 40, 40);
 	SDL_SyncWindow(engine->window);

@@ -86,26 +86,16 @@ endfunction()
 
 # --- games -------------------------------------------------------------------
 
-set(DEMO_ASSETS
-    ${CMAKE_SOURCE_DIR}/DEMO/04B_03__.TTF
-    ${CMAKE_SOURCE_DIR}/DEMO/animazione_loop_goblin.png
-    ${CMAKE_SOURCE_DIR}/DEMO/controls.png
-    ${CMAKE_SOURCE_DIR}/DEMO/tile_caverna.png)
-
-add_executable(demo DEMO/main.cpp DEMO/Game.cpp DEMO/GameWorld.cpp)
-target_link_libraries(demo PRIVATE toast)
-toast_warnings(demo)
-toast_copy_assets(demo ${DEMO_ASSETS})
-
 set(ROGUELIKE_ASSETS
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/04B_03__.TTF
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets
     ${CMAKE_SOURCE_DIR}/ROGUELIKE/rooms)
 
-# everything but main(), so the tests can drive the dungeon generator
+# everything but main(), so the tests can build levels
 add_library(roguelike_game STATIC
-    ROGUELIKE/Dungeon.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp
-    ROGUELIKE/Room.cpp ROGUELIKE/RoomsManager.cpp)
+    ROGUELIKE/Bullet.cpp ROGUELIKE/Cat.cpp ROGUELIKE/Effects.cpp ROGUELIKE/Game.cpp ROGUELIKE/GameWorld.cpp ROGUELIKE/Hud.cpp ROGUELIKE/Key.cpp ROGUELIKE/Level.cpp
+    ROGUELIKE/Maze.cpp ROGUELIKE/Movement.cpp ROGUELIKE/Player.cpp ROGUELIKE/Room.cpp ROGUELIKE/RoomTemplates.cpp
+    ROGUELIKE/ScreenShake.cpp)
 target_include_directories(roguelike_game PUBLIC ROGUELIKE)
 target_link_libraries(roguelike_game PUBLIC toast)
 toast_warnings(roguelike_game)
@@ -114,6 +104,23 @@ add_executable(roguelike ROGUELIKE/main.cpp)
 target_link_libraries(roguelike PRIVATE roguelike_game)
 toast_warnings(roguelike)
 toast_copy_assets(roguelike ${ROGUELIKE_ASSETS})
+
+# ASCII art sources -> PNG sheets. The PNGs are committed, so only an art change
+# needs this: cmake --build build --target roguelike_art
+add_library(pixelart_lib STATIC tools/PixelArt.cpp)
+target_include_directories(pixelart_lib PUBLIC tools)
+target_link_libraries(pixelart_lib PUBLIC SDL3::SDL3 SDL3_image::SDL3_image)
+toast_warnings(pixelart_lib)
+
+add_executable(pixelart EXCLUDE_FROM_ALL tools/pixelart_main.cpp)
+target_link_libraries(pixelart PRIVATE pixelart_lib)
+toast_warnings(pixelart)
+
+file(GLOB ROGUELIKE_ART_SHEETS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/*.txt)
+list(REMOVE_ITEM ROGUELIKE_ART_SHEETS ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/palette.txt)
+add_custom_target(roguelike_art
+    COMMAND pixelart ${CMAKE_SOURCE_DIR}/ROGUELIKE/assets
+        ${CMAKE_SOURCE_DIR}/ROGUELIKE/art/palette.txt ${ROGUELIKE_ART_SHEETS})
 
 # --- tests -------------------------------------------------------------------
 

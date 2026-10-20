@@ -104,6 +104,12 @@ namespace Toast
 	void Graphics::DrawRegion(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, 
 							  float destX, float destY, float alpha, bool flipped, float angle)
 	{
+		DrawRegionScaled(source, srcX, srcY, srcWidth, srcHeight, destX, destY, 1.0f, 1.0f, alpha, flipped, angle);
+	}
+
+	void Graphics::DrawRegionScaled(Texture* source, float srcX, float srcY, float srcWidth, float srcHeight, float destX, float destY,
+									float scaleX, float scaleY, float alpha, bool flipped, float angle)
+	{
 		if(!source)
 		{
 			TOAST_ERROR("[TEXTURE DRAW] The texture is NULL!");
@@ -112,7 +118,7 @@ namespace Toast
 
 		SDL_SetTextureAlphaModFloat(source->tex, alpha);
 		SDL_FRect src = {srcX, srcY, srcWidth, srcHeight};
-		SDL_FRect dst = {destX, destY, srcWidth, srcHeight};
+		SDL_FRect dst = {destX, destY, srcWidth * scaleX, srcHeight * scaleY};
 		renderTexture(source->tex, &src, &dst, flipped, angle);
 	}
 

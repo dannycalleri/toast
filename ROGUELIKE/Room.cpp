@@ -1,365 +1,194 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
 */
 
 #include "Room.h"
-#include "rapidxml.hpp"
-#include <cmath>
-#include <cstdlib>
-#include <fstream>
-#include <iterator>
-#include <string>
-#include <vector>
-#include "TF.h"
+#include "RoomTemplates.h"
 #include "ToastGrid.h"
 #include "ToastTilemap.h"
-#include "Game.h"
-#include "GameWorld.h"
-#include "Dungeon.h"
-
-using namespace rapidxml;
+#include <cmath>
+#include <vector>
 
 namespace Toast
 {
-	Room::Room(const std::string& filename, GameWorld* gameWorld) :
-		Entity()
+	namespace
 	{
-		this->filename = filename;
-		this->world = gameWorld;
-		tilemap = 0;
-		doorsGrid = 0;
-		collisionGrid = 0;
-		rowStart = 0;
-		rowEnd = 0;
-		colStart = 0;
-		colEnd = 0;
-		roomWidth = 0;
-		roomHeight = 0;
-		box = 0;
-		distance=0.0f;
-
-		doors.clear();
-
-		loadMap();
-		calculateBoundingBox();
-		locateDoors();
-
-		this->graphic = tilemap;
-	}
-
-	Room::Room(const Room& rhs)
-	{
-		this->filename = rhs.filename;
-		this->world = rhs.world;
-		// the dungeon copies rooms by the hundred while it tries to place them
-		tilemap = rhs.tilemap ? new Tilemap(*rhs.tilemap) : 0;
-		doorsGrid = rhs.doorsGrid ? new Grid(*rhs.doorsGrid) : 0;
-		collisionGrid = rhs.collisionGrid ? new Grid(*rhs.collisionGrid) : 0;
-		rowStart = 0;
-		rowEnd = 0;
-		colStart = 0;
-		colEnd = 0;
-		roomWidth = 0;
-		roomHeight = 0;
-		box = 0;
-		distance=0.0f;
-
-		doors.clear();
-
-		calculateBoundingBox();
-		locateDoors();
-
-		for(unsigned int i=0; i < doors.size(); i++)
+		int propTile(char cell)
 		{
-			Door* door = doors[i];
-			door->opened=true;
+			switch(cell)
+			{
+			case RoomTemplates::WALL:  return Room::INNER_WALL;
+			case RoomTemplates::ROCK:  return Room::ROCK;
+			case RoomTemplates::POT:   return Room::POT;
+			case RoomTemplates::CRATE: return Room::CRATE;
+			case RoomTemplates::BONES: return Room::BONES;
+			case RoomTemplates::GRASS: return Room::GRASS;
+			default:                   return -1;
+			}
 		}
 
-		this->graphic = tilemap;
+		// a fixed scatter, so a room looks the same every time it is built
+		int floorTile(int column, int row, int roomColumn, int roomRow)
+		{
+			int noise = (column * 31 + row * 17 + roomColumn * 7 + roomRow * 13) % 11;
+			return noise < 3 ? Room::FLOOR_CRACKED + noise : Room::FLOOR;
+		}
+
+		int wallTile(int column, int row)
+		{
+			bool left = column == 0;
+			bool right = column == Room::COLUMNS - 1;
+			bool top = row == 0;
+			bool bottom = row == Room::ROWS - 1;
+			if((left || right) && (top || bottom))
+				return Room::WALL_CORNER;
+			if(top)
+				return Room::WALL_TOP;
+			if(bottom)
+				return Room::WALL_BOTTOM;
+			return left ? Room::WALL_LEFT : Room::WALL_RIGHT;
+		}
+	}
+
+	Room::Room(const RoomTemplate& layout, unsigned char doorMask, int column, int row) :
+		Entity(column * WIDTH, row * HEIGHT),
+		layout(&layout),
+		column(column),
+		row(row)
+	{
+		tilemap = new Tilemap("assets/tiles.png", WIDTH, HEIGHT, TILE, TILE);
+		solid = new Grid(WIDTH, HEIGHT, TILE, TILE);
+
+		for(int r = 0; r < ROWS; r++)
+		{
+			for(int c = 0; c < COLUMNS; c++)
+			{
+				bool wall = r == 0 || c == 0 || r == ROWS - 1 || c == COLUMNS - 1;
+				if(wall)
+				{
+					tilemap->setTile(c, r, wallTile(c, r));
+					solid->setTile(c, r, true);
+					continue;
+				}
+
+				char cell = layout.at(c - 1, r - 1);
+				int prop = propTile(cell);
+				tilemap->setTile(c, r, prop >= 0 ? prop : floorTile(c, r, column, row));
+				solid->setTile(c, r, RoomTemplates::isSolid(cell));
+			}
+		}
+
+		for(int d = UP; d <= RIGHT; d++)
+		{
+			doors[d] = DOOR_NONE;
+			if(doorMask & doorBit((Direction)d))
+				setDoor((Direction)d, DOOR_OPEN);
+		}
+
+		graphic = tilemap;
 	}
 
 	Room::~Room()
 	{
-		delete doorsGrid;
-		delete collisionGrid;
-		delete box;
-
-		// delete every door
-		for(unsigned int i=0; i < doors.size(); i++)
-		{
-			delete doors[i];
-		}
-		doors.clear();
+		delete solid;
 	}
 
-	bool Room::overlapBoxVSBox(Rectangle* other, float otherX, float otherY)
+	void Room::doorTile(Direction d, int& column, int& row)
 	{
-		float x1 = this->x + this->box->x;
-		float y1 = this->y + this->box->y;
-
-		float x2 = otherX + other->x;
-		float y2 = otherY + other->y;
-
-		float px = fabs(x2 - x1) * 2;
-		float py = fabs(y2 - y1) * 2;
-			
-		if (px < (this->box->width + other->width) && py < (this->box->height + other->height)) return true;
-		return false;
-	}
-
-	bool Room::isOverlapping()
-	{
-		for(unsigned int i = 0; i < world->dungeon->rooms.size(); i++)
+		switch(d)
 		{
-			Room* r = (Room*)world->dungeon->rooms[i];
-			
-			if(r != this)
-			{
-				if (overlapBoxVSBox(r->box, r->x, r->y))
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	bool Room::hasDoor(DoorType type)
-	{
-		for (unsigned int i = 0; i < doors.size(); i++)
-		{
-			Door* tempDoor = doors[i];
-			if (tempDoor->type == type)
-				return true;
-		}
-			
-		return false;
-	}
-
-	Door* Room::getDoor(DoorType type)
-	{
-		for (unsigned int i = 0; i < doors.size(); i++)
-		{
-			Door* tempDoor = doors[i];
-			if (tempDoor->type == type)
-				return tempDoor;
-		}
-			
-		return NULL;
-	}
-
-	void Room::locateDoors()
-	{
-		if(!doorsGrid)
-			return;
-
-		bool doorFound = false;
-		
-		// find left edge doors
-		for(int row = rowStart; row <= rowEnd; row++)
-		{
-			if(doorsGrid->getTile(colStart, row))
-			{
-				if(!doorFound)
-				{
-					doorFound=true;
-
-					Door* tempDoor = new Door(colStart * Game::TILESIZE - box->x, 
-											  row * Game::TILESIZE - box->y, 
-											  DoorType::LEFT);
-					doors.push_back(tempDoor);
-				}
-			}
-			else
-			{
-				if(doorFound)
-				{
-					doorFound = false;
-				}
-			}
-		}
-
-		doorFound=false;
-
-		// right edge doors
-		for (int row = rowStart; row <= rowEnd; row++)
-		{
-			if (doorsGrid->getTile(colEnd, row))
-			{
-				if (!doorFound)
-				{
-					doorFound = true;
-					Door* tempDoor = new Door(colEnd * Game::TILESIZE - box->x, 
-										row * Game::TILESIZE - box->y, 
-										DoorType::RIGHT);
-					doors.push_back(tempDoor);
-				}
-			}
-			else
-			{
-				if (doorFound)
-				{
-					doorFound = false;
-				}
-			}
-		}
-			
-		doorFound = false;
-
-		// top edge doors
-		for (int col = colStart; col <= colEnd; col++)
-		{
-			if (doorsGrid->getTile(col, rowStart))
-			{
-				if (!doorFound)
-				{
-					doorFound = true;
-						
-					Door* tempDoor = new Door(col * Game::TILESIZE - box->x, 
-										rowStart * Game::TILESIZE - box->y, 
-										DoorType::UP);
-					doors.push_back(tempDoor);
-				}
-			}
-			else
-			{
-				if (doorFound)
-				{
-					doorFound = false;
-				}
-			}
-		}
-			
-		doorFound = false;
-
-		// bottom edge doors
-		for (int col = colStart; col <= colEnd; col++)
-		{
-			if (doorsGrid->getTile(col, rowEnd))
-			{
-				if (!doorFound)
-				{
-					doorFound = true;
-					Door* tempDoor = new Door(col * Game::TILESIZE - box->x,
-										rowEnd * Game::TILESIZE - box->y,
-										DoorType::DOWN);
-					doors.push_back(tempDoor);
-				}
-			}
-			else
-			{
-				if (doorFound)
-				{
-					doorFound = false;
-				}
-			}
+		case UP:    column = COLUMNS / 2 - 1; row = 0; break;
+		case DOWN:  column = COLUMNS / 2 - 1; row = ROWS - 1; break;
+		case LEFT:  column = 0; row = ROWS / 2 - 1; break;
+		default:    column = COLUMNS - 1; row = ROWS / 2 - 1; break;
 		}
 	}
 
-	void Room::calculateBoundingBox()
+	void Room::setDoor(Direction d, DoorState state)
 	{
-		bool startFound=false;
+		doors[d] = state;
 
-		// a room whose file failed to load keeps an empty box
-		for(int row = 0; collisionGrid && row < collisionGrid->rows; row++)
+		int column, row;
+		doorTile(d, column, row);
+		for(int i = 0; i < 2; i++)
 		{
-			for(int col = 0; col < collisionGrid->columns; col++)
+			int c = column + (d == UP || d == DOWN ? i : 0);
+			int r = row + (d == LEFT || d == RIGHT ? i : 0);
+			switch(state)
 			{
-				if(collisionGrid->getTile(col, row))
-				{
-					if(!startFound)
-					{
-						rowStart = row;
-						colStart = col;
-						startFound = true;
-					}
+			case DOOR_NONE:   tilemap->setTile(c, r, wallTile(c, r)); break;
+			case DOOR_OPEN:   tilemap->setTile(c, r, DOOR_OPEN_TILE); break;
+			case DOOR_CLOSED: tilemap->setTile(c, r, DOOR_CLOSED_TILE); break;
+			case DOOR_LOCKED: tilemap->setTile(c, r, DOOR_LOCKED_TILE); break;
+			}
+			solid->setTile(c, r, state != DOOR_OPEN);
+		}
+	}
 
-					rowEnd = row;
-					colEnd = col;
-				}
+	bool Room::isSolid(int column, int row)
+	{
+		if(column < 0 || row < 0 || column >= COLUMNS || row >= ROWS)
+			return true;
+		return solid->getTile(column, row);
+	}
+
+	bool Room::isSolidAt(float worldX, float worldY)
+	{
+		return isSolid((int)std::floor((worldX - x) / TILE), (int)std::floor((worldY - y) / TILE));
+	}
+
+	bool Room::nextStep(float fromX, float fromY, float toX, float toY, float& stepX, float& stepY)
+	{
+		int fromColumn = (int)std::floor((fromX - x) / TILE);
+		int fromRow = (int)std::floor((fromY - y) / TILE);
+		int toColumn = (int)std::floor((toX - x) / TILE);
+		int toRow = (int)std::floor((toY - y) / TILE);
+		if(isSolid(toColumn, toRow) || fromColumn < 0 || fromRow < 0 || fromColumn >= COLUMNS || fromRow >= ROWS)
+			return false;
+
+		// distances from the goal, so the walker only has to look at its neighbours
+		std::vector<int> distance(COLUMNS * ROWS, -1);
+		std::vector<int> queue(1, toRow * COLUMNS + toColumn);
+		distance[queue[0]] = 0;
+		const int dc[4] = {0, 0, -1, 1};
+		const int dr[4] = {-1, 1, 0, 0};
+		for(size_t head = 0; head < queue.size(); head++)
+		{
+			int c = queue[head] % COLUMNS;
+			int r = queue[head] / COLUMNS;
+			for(int i = 0; i < 4; i++)
+			{
+				int nc = c + dc[i];
+				int nr = r + dr[i];
+				if(isSolid(nc, nr) || distance[nr * COLUMNS + nc] >= 0)
+					continue;
+				distance[nr * COLUMNS + nc] = distance[queue[head]] + 1;
+				queue.push_back(nr * COLUMNS + nc);
 			}
 		}
 
-		// make sure that the room is bigger than 1x1
-		if (rowStart < rowEnd && colStart < colEnd)
+		int here = fromRow * COLUMNS + fromColumn;
+		int best = -1;
+		for(int i = 0; i < 4; i++)
 		{
-			int rowsSpan = rowEnd - rowStart;
-			int colsSpan = colEnd - colStart;
-				
-			roomWidth = (colsSpan + 1) * Game::TILESIZE;
-			roomHeight = (rowsSpan + 1) * Game::TILESIZE;
+			int nc = fromColumn + dc[i];
+			int nr = fromRow + dr[i];
+			if(nc < 0 || nr < 0 || nc >= COLUMNS || nr >= ROWS)
+				continue;
+			int d = distance[nr * COLUMNS + nc];
+			if(d >= 0 && (best < 0 || d < distance[best]) && (distance[here] < 0 || d < distance[here]))
+				best = nr * COLUMNS + nc;
 		}
+		if(best < 0)
+			return false;
 
-		box = new Rectangle(
-			colStart * Game::TILESIZE,
-			rowStart * Game::TILESIZE,
-			roomWidth,
-			roomHeight);
-
-		//std::cout << "box : " << "colStart = " << box->x << " rowStart = " << box->y << " roomWidth = " << box->width << " roomHeight = " << box->height << "\n";
-	}
-
-	void Room::loadMap()
-	{
-		std::ifstream mapFile(TF::resolvePath(filename).c_str(), std::ios::binary);
-
-		if(mapFile.fail())
-		{
-			TOAST_ERROR(("[ROOM] failed to open room file " + filename).c_str());
-			return;
-		}
-
-		// rapidxml parses in place and needs a writable, null-terminated buffer
-		std::vector<char> mapText((std::istreambuf_iterator<char>(mapFile)),
-								  std::istreambuf_iterator<char>());
-		mapText.push_back('\0');
-
-		xml_document<> map;
-		try
-		{
-			map.parse<0>(&mapText[0]);
-		}
-		catch(const parse_error& e)
-		{
-			TOAST_ERROR(("[ROOM] " + filename + ": " + e.what()).c_str());
-			return;
-		}
-
-		xml_node<>* level = map.first_node();
-		xml_attribute<>* mapWidth = level ? level->first_attribute("width") : NULL;
-		xml_attribute<>* mapHeight = level ? level->first_attribute("height") : NULL;
-		xml_node<>* doorsNode = level ? level->first_node("Doors") : NULL;
-		xml_node<>* tilesNode = level ? level->first_node("Tiles") : NULL;
-		xml_node<>* collisionsNode = level ? level->first_node("Collisions") : NULL;
-		if(!mapWidth || !mapHeight || !doorsNode || !tilesNode || !collisionsNode)
-		{
-			TOAST_ERROR(("[ROOM] " + filename + " is missing width, height, Doors, Tiles or Collisions").c_str());
-			return;
-		}
-
-		doorsGrid = new Grid(atoi(mapWidth->value()), atoi(mapHeight->value()), 32, 32);
-		doorsGrid->loadFromString(doorsNode->value(), "", "\n");
-		//doorsGrid->printDebug();
-
-		collisionGrid = new Grid(atoi(mapWidth->value()), atoi(mapHeight->value()), 32, 32);
-		collisionGrid->loadFromString(collisionsNode->value(), "", "\n");
-		//collisionGrid->printDebug();
-
-		tilemap = new Tilemap("assets/tileset.png", atoi(mapWidth->value()), atoi(mapHeight->value()), 32, 32);
-		tilemap->loadFromString(tilesNode->value(), ",", "\n");
-
-		/*std::cout << "DOORS GRID WIDTH = " << doorsGrid->width << "\n";
-		std::cout << "DOORS GRID HEIGHT = " << doorsGrid->height << "\n";*/
-	}
-
-	void Room::update()
-	{
-		Entity::update();
+		stepX = x + (best % COLUMNS) * TILE + TILE / 2;
+		stepY = y + (best / COLUMNS) * TILE + TILE / 2;
+		return true;
 	}
 }

@@ -1,8 +1,10 @@
 #include "ToastTest.h"
 #include "HeadlessVideo.h"
+#include "ReadPixel.h"
 #include "Toast.h"
 #include "ToastCanvas.h"
 #include "ToastFont.h"
+#include "ToastGraphics.h"
 #include "ToastImage.h"
 #include "ToastInput.h"
 #include "ToastText.h"
@@ -31,15 +33,7 @@ namespace
 
 	SDL_Color pixelAt(int x, int y)
 	{
-		SDL_Color color = {0, 0, 0, 0};
-		SDL_Rect rect = {x, y, 1, 1};
-		SDL_Surface* surface = SDL_RenderReadPixels(TF::engine->renderer, &rect);
-		if(surface)
-		{
-			SDL_ReadSurfacePixel(surface, 0, 0, &color.r, &color.g, &color.b, &color.a);
-			SDL_DestroySurface(surface);
-		}
-		return color;
+		return readGamePixel(TF::engine->renderer, x, y);
 	}
 
 	void pushEvent(SDL_Event ev)
@@ -55,7 +49,7 @@ TOAST_TEST(engine_loads_assets_and_renders)
 
 	CHECK(TF::font && TF::font->getHandle());
 
-	Image* image = new Image("controls.png");
+	Image* image = new Image("assets/kid.png");
 	CHECK(image->texture != NULL);
 	CHECK(image->width > 0 && image->height > 0);
 	TF::world->addGraphic(image);
@@ -142,7 +136,6 @@ TOAST_TEST(engine_text_is_drawn_inside_its_canvas)
 {
 	Engine* engine = startEngine(320, 240);
 
-	// placed like DEMO's "PRESS [ENTER]" line, at the bottom of the screen
 	Text* text = new Text("TOAST");
 	text->y = TF::height - text->height;
 	TF::world->addGraphic(text);
@@ -220,4 +213,97 @@ TOAST_TEST(engine_frame_time_is_capped)
 	const Uint64 ms = SDL_NS_PER_MS;
 	CHECK(SDL_fabs(Engine::frameSeconds(1000 * ms, 1016 * ms) - 0.016) < 1e-9);
 	CHECK(Engine::frameSeconds(0, 5000 * ms) == Engine::MAX_FRAME_SECONDS);
+}
+
+TOAST_TEST(engine_window_opens_at_the_largest_whole_scale_that_fits)
+{
+	int width, height;
+	// 4x would need 960 of the 864 usable rows
+	Engine::windowSize(320, 240, 1920, 1080, width, height);
+	CHECK(width == 960 && height == 720);
+
+	Engine::windowSize(320, 240, 2560, 1440, width, height);
+	CHECK(width == 1280 && height == 960);
+
+	Engine::windowSize(1280, 720, 1920, 1080, width, height);
+	CHECK(width == 1280 && height == 720);
+
+	// exactly 80%: the multiple still fits
+	Engine::windowSize(320, 240, 800, 600, width, height);
+	CHECK(width == 640 && height == 480);
+
+	// smaller than 1x: shrink to 80% and keep the aspect ratio, as before
+	Engine::windowSize(1280, 720, 1000, 1000, width, height);
+	CHECK(width == 800 && height == 450);
+}
+
+namespace
+{
+	Image* whiteImage(int size)
+	{
+		SDL_Surface* surface = SDL_CreateSurface(size, size, SDL_PIXELFORMAT_RGBA8888);
+		SDL_FillSurfaceRect(surface, NULL, SDL_MapSurfaceRGBA(surface, 255, 255, 255, 255));
+		Texture* texture = new Texture();
+		texture->tex = SDL_CreateTextureFromSurface(TF::engine->renderer, surface);
+		texture->setWidth(size);
+		texture->setHeight(size);
+		SDL_DestroySurface(surface);
+		TF::addTexture("white", texture);
+
+		Image* image = new Image("white");
+		image->x = 10;
+		image->y = 10;
+		TF::world->addGraphic(image);
+		return image;
+	}
+
+	void renderWorld()
+	{
+		TF::engine->resetRenderingBuffer();
+		Graphics::Clear(0, 0, 0);
+		TF::world->render();
+	}
+}
+
+TOAST_TEST(engine_image_defaults_draw_at_full_size_and_opacity)
+{
+	Engine* engine = startEngine(64, 64);
+	whiteImage(4);
+	renderWorld();
+	CHECK(pixelAt(10, 10).r == 255);
+	CHECK(pixelAt(13, 13).r == 255);
+	CHECK(pixelAt(14, 13).r == 0);
+	CHECK(pixelAt(13, 14).r == 0);
+	delete engine;
+}
+
+TOAST_TEST(engine_image_scale_multiplies_its_drawn_size)
+{
+	Engine* engine = startEngine(64, 64);
+	Image* image = whiteImage(4);
+
+	image->scale = 2;
+	renderWorld();
+	CHECK(pixelAt(17, 17).r == 255);
+	CHECK(pixelAt(18, 17).r == 0);
+	CHECK(pixelAt(17, 18).r == 0);
+
+	image->scale = 1;
+	image->scaleX = 2;
+	renderWorld();
+	CHECK(pixelAt(17, 13).r == 255);
+	CHECK(pixelAt(18, 13).r == 0);
+	CHECK(pixelAt(13, 14).r == 0);
+	delete engine;
+}
+
+TOAST_TEST(engine_image_alpha_blends_over_what_is_below)
+{
+	Engine* engine = startEngine(64, 64);
+	Image* image = whiteImage(4);
+	image->alpha = 0.5f;
+	renderWorld();
+	SDL_Color c = pixelAt(11, 11);
+	CHECK(c.r > 110 && c.r < 145);
+	delete engine;
 }

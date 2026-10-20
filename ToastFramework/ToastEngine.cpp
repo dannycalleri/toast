@@ -117,6 +117,23 @@ namespace Toast
 			TF::console->update();
 	}
 
+	void Engine::windowSize(int logicalWidth, int logicalHeight, int usableWidth, int usableHeight,
+							int& windowWidth, int& windowHeight)
+	{
+		// 80% leaves room for the menu bar, dock and window borders
+		float fit = std::min(0.8f * usableWidth / logicalWidth, 0.8f * usableHeight / logicalHeight);
+		if(fit < 1.0f)
+		{
+			windowWidth = int(logicalWidth * fit);
+			windowHeight = int(logicalHeight * fit);
+			return;
+		}
+		// whole multiples keep every game pixel the same size on screen
+		int scale = int(fit);
+		windowWidth = logicalWidth * scale;
+		windowHeight = logicalHeight * scale;
+	}
+
 	double Engine::frameSeconds(Uint64 prevTicksNS, Uint64 ticksNS)
 	{
 		return std::min(double(ticksNS - prevTicksNS) / SDL_NS_PER_SECOND, MAX_FRAME_SECONDS);
@@ -170,19 +187,11 @@ namespace Toast
 		if(!TTF_Init())
 			return false;
 
-		// leaves room for the menu bar, dock and window borders
 		int windowWidth = this->width;
 		int windowHeight = this->height;
 		SDL_Rect usable;
 		if(SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usable))
-		{
-			float fit = std::min(0.8f * usable.w / this->width, 0.8f * usable.h / this->height);
-			if(fit < 1.0f)
-			{
-				windowWidth = int(this->width * fit);
-				windowHeight = int(this->height * fit);
-			}
-		}
+			windowSize(this->width, this->height, usable.w, usable.h, windowWidth, windowHeight);
 
 		SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 		if(fullscreen)

@@ -53,6 +53,11 @@ namespace Toast
 		static double frameSeconds(Uint64 prevTicksNS, Uint64 ticksNS);
 		static const double MAX_FRAME_SECONDS;
 
+		// the largest whole multiple of the logical size that fits in 80% of the
+		// usable display, or the logical size shrunk to fit when even 1x does not
+		static void windowSize(int logicalWidth, int logicalHeight, int usableWidth, int usableHeight,
+							   int& windowWidth, int& windowHeight);
+
 	protected:
 		bool fullscreen;
 		bool paused;

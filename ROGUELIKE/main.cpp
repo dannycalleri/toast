@@ -1,7 +1,7 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
@@ -15,6 +15,6 @@ using namespace Toast;
 
 int main(int argc, char* args[])
 {
-	Game gameDemo;
-	return gameDemo.run();
+	Game game;
+	return game.run();
 }

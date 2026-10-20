@@ -25,9 +25,9 @@ namespace Toast
 			this->height = this->texture->getHeight();
 		}
 		this->angle = 0.0f;
-		this->scale = 0.0f;
-		this->scaleX = 0.0f;
-		this->scaleY = 0.0f;
+		this->scale = 1.0f;
+		this->scaleX = 1.0f;
+		this->scaleY = 1.0f;
 		this->originX = 0.0f;
 		this->originY = 0.0f;
 		//this->flipped = false;
@@ -50,7 +50,9 @@ namespace Toast
 				renderY += this->point->y;
 			}
 
-			Graphics::Draw(this->texture, renderX, renderY, this->flipped, this->angle);
+			Graphics::DrawRegionScaled(this->texture, 0.0f, 0.0f, (float)this->texture->getWidth(), (float)this->texture->getHeight(),
+									   renderX, renderY, this->scale * this->scaleX, this->scale * this->scaleY,
+									   this->alpha, this->flipped, this->angle);
 		}
 	}
 

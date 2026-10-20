@@ -1,7 +1,7 @@
 /*
 =========================================================================
 
-Roguelike Dungeon Generation demo
+Cat Crypt, a Toast sample game
 Copyright (C) 2013 Danny Calleri
 
 ==========================================================================
@@ -12,10 +12,8 @@ Copyright (C) 2013 Danny Calleri
 
 namespace Toast
 {
-	const int Game::TILESIZE = 32;
-
 	Game::Game()
-		: Engine(1024, 768, false)
+		: Engine(320, 240, false)
 	{
 		setPixelArt(true);
 
@@ -25,7 +23,7 @@ namespace Toast
 
 		TF::console->enable();
 		// debug console settings
-		TF::console->setThickness(5);
+		TF::console->setThickness(1);
 	}
 
 }
